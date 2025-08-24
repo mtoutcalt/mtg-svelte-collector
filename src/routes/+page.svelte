@@ -37,10 +37,60 @@
 	let cardName: string = '';
 	let cardData: CardData = null;
 	let loading: boolean = false;
+	let addedToCollection: boolean = false;
+	let viewingCollection: boolean = false;
+	let collection: ScryfallCard[] = [];
+
+	function loadCollection(): void {
+		if (typeof window !== 'undefined') {
+			collection = JSON.parse(localStorage.getItem('mtg-collection') || '[]') as ScryfallCard[];
+		}
+	}
+
+	function addToCollection(card: ScryfallCard): void {
+		if (typeof window !== 'undefined') {
+			const storedCollection = JSON.parse(localStorage.getItem('mtg-collection') || '[]') as ScryfallCard[];
+			
+			// Check if card is already in collection
+			const exists = storedCollection.some(c => c.id === card.id);
+			if (!exists) {
+				storedCollection.push(card);
+				localStorage.setItem('mtg-collection', JSON.stringify(storedCollection));
+				addedToCollection = true;
+				
+				// Update local collection if viewing
+				if (viewingCollection) {
+					loadCollection();
+				}
+				
+				// Reset the feedback after 2 seconds
+				setTimeout(() => {
+					addedToCollection = false;
+				}, 2000);
+			}
+		}
+	}
+
+	function toggleCollectionView(): void {
+		viewingCollection = !viewingCollection;
+		if (viewingCollection) {
+			loadCollection();
+		}
+	}
+
+	function getCollectionCount(): number {
+		if (typeof window !== 'undefined') {
+			const storedCollection = JSON.parse(localStorage.getItem('mtg-collection') || '[]') as ScryfallCard[];
+			return storedCollection.length;
+		}
+		return 0;
+	}
 
 	async function searchCard(): Promise<void> {
 		if (!cardName.trim()) return;
 		
+		// Reset added state when searching
+		addedToCollection = false;
 		loading = true;
 		try {
 			const response = await fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`);
@@ -98,6 +148,13 @@
 
 <h1 class="main-title">Magic Card Search</h1>
 
+<div class="top-nav">
+	<button class="collection-button" on:click={toggleCollectionView}>
+		{viewingCollection ? '← Back to Search' : `📚 View Collection (${getCollectionCount()})`}
+	</button>
+</div>
+
+{#if !viewingCollection}
 <div class="search-container">
 	<input 
 		bind:value={cardName} 
@@ -135,6 +192,16 @@
 				<p><strong>Mana Cost:</strong> {cardData.mana_cost || 'N/A'}</p>
 				<p><strong>Type:</strong> {cardData.type_line}</p>
 				<p><strong>Text:</strong> {cardData.oracle_text || 'No text'}</p>
+				
+				<div class="card-actions">
+					<button 
+						class="add-button" 
+						on:click={() => isCard(cardData) && addToCollection(cardData)}
+						disabled={addedToCollection}
+					>
+						{addedToCollection ? '✓ Added!' : '+ Add to Collection'}
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -142,9 +209,51 @@
 	<p class="error">{cardData.error}</p>
 {/if}
 
+{:else}
+<!-- Collection View -->
+<div class="collection-view">
+	<h2>My Collection ({collection.length} cards)</h2>
+	
+	{#if collection.length === 0}
+		<p class="empty-collection">Your collection is empty. Search for cards and add them to get started!</p>
+	{:else}
+		<div class="collection-grid">
+			{#each collection as card}
+				<div class="collection-card">
+					<img src={card.image_uris?.normal} alt={card.name} class="collection-card-image" />
+					<div class="collection-card-info">
+						<h3>{card.name}</h3>
+						<p>{card.type_line}</p>
+					</div>
+				</div>
+			{/each}
+		</div>
+	{/if}
+</div>
+{/if}
+
 <style>
 	.main-title {
 		margin-bottom: 20px;
+	}
+	
+	.top-nav {
+		margin-bottom: 20px;
+	}
+	
+	.collection-button {
+		background: #2196F3;
+		color: white;
+		border: none;
+		padding: 10px 16px;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 14px;
+		transition: background-color 0.2s;
+	}
+	
+	.collection-button:hover {
+		background: #1976D2;
 	}
 	
 	.search-container {
@@ -221,6 +330,31 @@
 		font-size: 14px;
 	}
 	
+	.card-actions {
+		margin-top: 15px;
+	}
+	
+	.add-button {
+		background: #4CAF50;
+		color: white;
+		border: none;
+		padding: 10px 16px;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 14px;
+		transition: background-color 0.2s;
+	}
+	
+	.add-button:hover:not(:disabled) {
+		background: #45a049;
+	}
+	
+	.add-button:disabled {
+		background: #28a745;
+		cursor: not-allowed;
+		opacity: 0.8;
+	}
+	
 	.skeleton {
 		background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
 		background-size: 200% 100%;
@@ -253,5 +387,58 @@
 		100% {
 			background-position: -200% 0;
 		}
+	}
+	
+	.collection-view {
+		margin-top: 20px;
+	}
+	
+	.empty-collection {
+		text-align: center;
+		color: #666;
+		font-style: italic;
+		margin: 40px 0;
+	}
+	
+	.collection-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		gap: 20px;
+		margin-top: 20px;
+	}
+	
+	.collection-card {
+		border: 1px solid #ddd;
+		border-radius: 8px;
+		overflow: hidden;
+		background: white;
+		transition: transform 0.2s, box-shadow 0.2s;
+	}
+	
+	.collection-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+	}
+	
+	.collection-card-image {
+		width: 100%;
+		height: auto;
+		display: block;
+	}
+	
+	.collection-card-info {
+		padding: 10px;
+	}
+	
+	.collection-card-info h3 {
+		margin: 0 0 5px 0;
+		font-size: 14px;
+		color: #333;
+	}
+	
+	.collection-card-info p {
+		margin: 0;
+		font-size: 12px;
+		color: #666;
 	}
 </style>
