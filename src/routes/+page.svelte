@@ -1,44 +1,17 @@
 <script lang="ts">
-	interface ScryfallCard {
-		id: string;
-		name: string;
-		mana_cost?: string;
-		type_line: string;
-		oracle_text?: string;
-		image_uris?: {
-			normal: string;
-			small: string;
-			large: string;
-		};
-		prices?: {
-			usd?: string;
-			usd_foil?: string;
-			eur?: string;
-			tix?: string;
-		};
-		fuzzyMatch?: boolean;
-	}
-
-	interface ScryfallError {
-		error: string;
-		notFound?: boolean;
-	}
-
-	interface ScryfallSearchResponse {
-		data: ScryfallCard[];
-		total_cards: number;
-	}
-
-	type CardData = ScryfallCard | ScryfallError | null;
-
-	// Type guards
-	function isError(data: CardData): data is ScryfallError {
-		return data !== null && 'error' in data;
-	}
-
-	function isCard(data: CardData): data is ScryfallCard {
-		return data !== null && 'name' in data && !('error' in data);
-	}
+	import {
+		type ScryfallCard,
+		type ScryfallError,
+		type ScryfallSearchResponse,
+		type CardData,
+		isError,
+		isCard,
+		calculateCollectionValue,
+		formatCurrency,
+		loadCollectionFromStorage,
+		addCardToCollection,
+		removeCardFromCollection
+	} from '$lib/utils';
 
 	let cardName: string = '';
 	let cardData: CardData = null;
@@ -48,58 +21,30 @@
 	let collection: ScryfallCard[] = [];
 
 	function loadCollection(): void {
-		if (typeof window !== 'undefined') {
-			collection = JSON.parse(localStorage.getItem('mtg-collection') || '[]') as ScryfallCard[];
-		}
+		collection = loadCollectionFromStorage();
 	}
 
 	function addToCollection(card: ScryfallCard): void {
-		if (typeof window !== 'undefined') {
-			const storedCollection = JSON.parse(localStorage.getItem('mtg-collection') || '[]') as ScryfallCard[];
+		const success = addCardToCollection(card);
+		if (success) {
+			addedToCollection = true;
 			
-			// Check if card is already in collection
-			const exists = storedCollection.some(c => c.id === card.id);
-			if (!exists) {
-				storedCollection.push(card);
-				localStorage.setItem('mtg-collection', JSON.stringify(storedCollection));
-				addedToCollection = true;
-				
-				// Update local collection if viewing
-				if (viewingCollection) {
-					loadCollection();
-				}
-				
-				// Reset the feedback after 2 seconds
-				setTimeout(() => {
-					addedToCollection = false;
-				}, 2000);
+			// Update local collection if viewing
+			if (viewingCollection) {
+				loadCollection();
 			}
+			
+			// Reset the feedback after 2 seconds
+			setTimeout(() => {
+				addedToCollection = false;
+			}, 2000);
 		}
 	}
 
 	function removeFromCollection(cardId: string): void {
-		if (typeof window !== 'undefined') {
-			const storedCollection = JSON.parse(localStorage.getItem('mtg-collection') || '[]') as ScryfallCard[];
-			const updatedCollection = storedCollection.filter(c => c.id !== cardId);
-			localStorage.setItem('mtg-collection', JSON.stringify(updatedCollection));
-			
-			// Update local collection
-			loadCollection();
-		}
-	}
-
-	function calculateCollectionValue(): number {
-		return collection.reduce((total, card) => {
-			const price = parseFloat(card.prices?.usd || '0');
-			return total + price;
-		}, 0);
-	}
-
-	function formatCurrency(value: number): string {
-		return new Intl.NumberFormat('en-US', {
-			style: 'currency',
-			currency: 'USD'
-		}).format(value);
+		removeCardFromCollection(cardId);
+		// Update local collection
+		loadCollection();
 	}
 
 	function toggleCollectionView(): void {
@@ -110,11 +55,7 @@
 	}
 
 	function getCollectionCount(): number {
-		if (typeof window !== 'undefined') {
-			const storedCollection = JSON.parse(localStorage.getItem('mtg-collection') || '[]') as ScryfallCard[];
-			return storedCollection.length;
-		}
-		return 0;
+		return loadCollectionFromStorage().length;
 	}
 
 	async function searchCard(): Promise<void> {
@@ -248,7 +189,7 @@
 		<h2>My Collection ({collection.length} cards)</h2>
 		{#if collection.length > 0}
 			<div class="collection-value">
-				<strong>Total Worth: {formatCurrency(calculateCollectionValue())}</strong>
+				<strong>Total Worth: {formatCurrency(calculateCollectionValue(collection))}</strong>
 			</div>
 		{/if}
 	</div>
