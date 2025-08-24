@@ -88,6 +88,20 @@
 		}
 	}
 
+	function calculateCollectionValue(): number {
+		return collection.reduce((total, card) => {
+			const price = parseFloat(card.prices?.usd || '0');
+			return total + price;
+		}, 0);
+	}
+
+	function formatCurrency(value: number): string {
+		return new Intl.NumberFormat('en-US', {
+			style: 'currency',
+			currency: 'USD'
+		}).format(value);
+	}
+
 	function toggleCollectionView(): void {
 		viewingCollection = !viewingCollection;
 		if (viewingCollection) {
@@ -230,7 +244,14 @@
 {:else}
 <!-- Collection View -->
 <div class="collection-view">
-	<h2>My Collection ({collection.length} cards)</h2>
+	<div class="collection-header">
+		<h2>My Collection ({collection.length} cards)</h2>
+		{#if collection.length > 0}
+			<div class="collection-value">
+				<strong>Total Worth: {formatCurrency(calculateCollectionValue())}</strong>
+			</div>
+		{/if}
+	</div>
 	
 	{#if collection.length === 0}
 		<p class="empty-collection">Your collection is empty. Search for cards and add them to get started!</p>
@@ -417,6 +438,31 @@
 	
 	.collection-view {
 		margin-top: 20px;
+	}
+	
+	.collection-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 20px;
+		padding: 15px;
+		background: #f8f9fa;
+		border: 1px solid #dee2e6;
+		border-radius: 8px;
+	}
+	
+	.collection-header h2 {
+		margin: 0;
+		color: #333;
+	}
+	
+	.collection-value {
+		font-size: 18px;
+		color: #2e7d32;
+		padding: 8px 16px;
+		background: #e8f5e8;
+		border: 1px solid #c8e6c9;
+		border-radius: 6px;
 	}
 	
 	.empty-collection {
