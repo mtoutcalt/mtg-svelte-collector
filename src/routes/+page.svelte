@@ -77,6 +77,17 @@
 		}
 	}
 
+	function removeFromCollection(cardId: string): void {
+		if (typeof window !== 'undefined') {
+			const storedCollection = JSON.parse(localStorage.getItem('mtg-collection') || '[]') as ScryfallCard[];
+			const updatedCollection = storedCollection.filter(c => c.id !== cardId);
+			localStorage.setItem('mtg-collection', JSON.stringify(updatedCollection));
+			
+			// Update local collection
+			loadCollection();
+		}
+	}
+
 	function toggleCollectionView(): void {
 		viewingCollection = !viewingCollection;
 		if (viewingCollection) {
@@ -232,6 +243,13 @@
 						<h3>{card.name}</h3>
 						<p class="card-type">{card.type_line}</p>
 						<p class="card-price">{card.prices?.usd ? `$${card.prices.usd}` : 'N/A'}</p>
+						<button 
+							class="remove-button" 
+							on:click={() => removeFromCollection(card.id)}
+							title="Remove from collection"
+						>
+							🗑️ Remove
+						</button>
 					</div>
 				</div>
 			{/each}
@@ -451,9 +469,25 @@
 	}
 	
 	.collection-card-info .card-price {
-		margin: 0;
+		margin: 0 0 10px 0;
 		font-size: 12px;
 		font-weight: bold;
 		color: #2e7d32;
+	}
+	
+	.remove-button {
+		background: #f44336;
+		color: white;
+		border: none;
+		padding: 6px 10px;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 11px;
+		transition: background-color 0.2s;
+		width: 100%;
+	}
+	
+	.remove-button:hover {
+		background: #d32f2f;
 	}
 </style>
