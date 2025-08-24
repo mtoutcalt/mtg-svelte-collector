@@ -1,6 +1,6 @@
-# sv
+# Magic Card Collection Manager
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A Svelte-based web application for managing your Magic: The Gathering card collection using the Scryfall API.
 
 ## Creating a project
 
@@ -24,6 +24,32 @@ npm run dev
 # or start the server and open the app in a new browser tab
 npm run dev -- --open
 ```
+
+## TypeScript
+
+This project uses TypeScript with strict mode for type safety. The application includes:
+
+- **Type-safe API responses** - Interfaces for Scryfall API data (`ScryfallCard`, `ScryfallError`, `ScryfallSearchResponse`)
+- **Type guards** - Functions like `isCard()` and `isError()` for runtime type checking
+- **Strict TypeScript configuration** - Full type checking enabled
+
+### TypeScript Commands
+
+```sh
+# Check for TypeScript errors
+npm run check
+
+# Build with TypeScript compilation
+npm run build
+```
+
+### Current Features
+
+- **Card Search** - Search Magic cards by name with fuzzy matching
+- **Scryfall Integration** - Fetches card data and images from Scryfall API  
+- **Error Handling** - Specific error messages for different failure types
+- **Loading States** - Skeleton UI while searching
+- **TypeScript Safety** - Full type coverage for API responses
 
 ## Building
 

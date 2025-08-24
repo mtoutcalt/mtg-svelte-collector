@@ -1,36 +1,70 @@
-<script>
-	let cardName = '';
-	let cardData = null;
-	let loading = false;
+<script lang="ts">
+	interface ScryfallCard {
+		id: string;
+		name: string;
+		mana_cost?: string;
+		type_line: string;
+		oracle_text?: string;
+		image_uris?: {
+			normal: string;
+			small: string;
+			large: string;
+		};
+		fuzzyMatch?: boolean;
+	}
 
-	async function searchCard() {
+	interface ScryfallError {
+		error: string;
+		notFound?: boolean;
+	}
+
+	interface ScryfallSearchResponse {
+		data: ScryfallCard[];
+		total_cards: number;
+	}
+
+	type CardData = ScryfallCard | ScryfallError | null;
+
+	// Type guards
+	function isError(data: CardData): data is ScryfallError {
+		return data !== null && 'error' in data;
+	}
+
+	function isCard(data: CardData): data is ScryfallCard {
+		return data !== null && 'name' in data && !('error' in data);
+	}
+
+	let cardName: string = '';
+	let cardData: CardData = null;
+	let loading: boolean = false;
+
+	async function searchCard(): Promise<void> {
 		if (!cardName.trim()) return;
 		
 		loading = true;
 		try {
 			const response = await fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`);
 			if (response.ok) {
-				cardData = await response.json();
+				cardData = await response.json() as ScryfallCard;
 			} else if (response.status === 404) {
 				// Try fuzzy search as fallback - search each word
-				const words = cardName.split(' ').filter(word => word.length > 2);
-				let found = false;
+				const words: string[] = cardName.split(' ').filter(word => word.length > 2);
+				let found: boolean = false;
 				
 				for (const word of words) {
 					try {
 						const fuzzyResponse = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(word)}`);
 						if (fuzzyResponse.ok) {
-							const fuzzyData = await fuzzyResponse.json();
+							const fuzzyData = await fuzzyResponse.json() as ScryfallSearchResponse;
 							if (fuzzyData.data && fuzzyData.data.length > 0) {
 								// Find best match by looking for cards that contain the original search terms
-								const bestMatch = fuzzyData.data.find(card => 
-									cardName.toLowerCase().split(' ').some(searchWord => 
+								const bestMatch: ScryfallCard = fuzzyData.data.find((card: ScryfallCard) => 
+									cardName.toLowerCase().split(' ').some((searchWord: string) => 
 										card.name.toLowerCase().includes(searchWord.substring(0, 4))
 									)
 								) || fuzzyData.data[0];
 								
-								cardData = bestMatch;
-								cardData.fuzzyMatch = true;
+								cardData = { ...bestMatch, fuzzyMatch: true };
 								found = true;
 								break;
 							}
@@ -52,7 +86,7 @@
 				};
 			}
 		} catch (error) {
-			if (error.name === 'TypeError' && error.message.includes('fetch')) {
+			if (error instanceof TypeError && error.message.includes('fetch')) {
 				cardData = { error: 'Network error. Please check your internet connection.' };
 			} else {
 				cardData = { error: 'Something went wrong. Please try again.' };
@@ -87,7 +121,7 @@
 			</div>
 		</div>
 	</div>
-{:else if cardData && !cardData.error}
+{:else if isCard(cardData)}
 	{#if cardData.fuzzyMatch}
 		<div class="fuzzy-notice">
 			<p>📋 Showing closest match for "{cardName}"</p>
@@ -104,7 +138,7 @@
 			</div>
 		</div>
 	</div>
-{:else if cardData && cardData.error}
+{:else if isError(cardData)}
 	<p class="error">{cardData.error}</p>
 {/if}
 
