@@ -10,6 +10,12 @@
 			small: string;
 			large: string;
 		};
+		prices?: {
+			usd?: string;
+			usd_foil?: string;
+			eur?: string;
+			tix?: string;
+		};
 		fuzzyMatch?: boolean;
 	}
 
@@ -191,6 +197,7 @@
 				<h2>{cardData.name}</h2>
 				<p><strong>Mana Cost:</strong> {cardData.mana_cost || 'N/A'}</p>
 				<p><strong>Type:</strong> {cardData.type_line}</p>
+				<p><strong>Price:</strong> {cardData.prices?.usd ? `$${cardData.prices.usd}` : 'N/A'}</p>
 				<p><strong>Text:</strong> {cardData.oracle_text || 'No text'}</p>
 				
 				<div class="card-actions">
@@ -223,7 +230,8 @@
 					<img src={card.image_uris?.normal} alt={card.name} class="collection-card-image" />
 					<div class="collection-card-info">
 						<h3>{card.name}</h3>
-						<p>{card.type_line}</p>
+						<p class="card-type">{card.type_line}</p>
+						<p class="card-price">{card.prices?.usd ? `$${card.prices.usd}` : 'N/A'}</p>
 					</div>
 				</div>
 			{/each}
@@ -436,9 +444,16 @@
 		color: #333;
 	}
 	
-	.collection-card-info p {
-		margin: 0;
+	.collection-card-info .card-type {
+		margin: 0 0 3px 0;
 		font-size: 12px;
 		color: #666;
+	}
+	
+	.collection-card-info .card-price {
+		margin: 0;
+		font-size: 12px;
+		font-weight: bold;
+		color: #2e7d32;
 	}
 </style>
