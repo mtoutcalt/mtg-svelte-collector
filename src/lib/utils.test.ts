@@ -109,65 +109,158 @@ describe('Currency Formatting', () => {
 	});
 });
 
-describe('LocalStorage Operations', () => {
+describe('Collection API Operations', () => {
+	const mockFetch = vi.fn();
+	
 	beforeEach(() => {
-		// Clear all localStorage mocks before each test
+		// Clear all mocks before each test
 		vi.clearAllMocks();
 		localStorage.clear();
+		
+		// Mock global fetch
+		global.fetch = mockFetch;
+		
+		// Mock window object for localStorage fallback
+		Object.defineProperty(window, 'localStorage', {
+			value: {
+				getItem: vi.fn(),
+				setItem: vi.fn(),
+				clear: vi.fn(),
+			},
+			writable: true
+		});
 	});
 
-	it('should load empty collection when localStorage is empty', () => {
-		localStorage.getItem = vi.fn().mockReturnValue(null);
+	it('should load empty collection when API returns empty array', async () => {
+		mockFetch.mockResolvedValue({
+			ok: true,
+			json: async () => []
+		});
 		
-		const collection = loadCollectionFromStorage();
+		const collection = await loadCollectionFromStorage();
 		expect(collection).toEqual([]);
+		expect(mockFetch).toHaveBeenCalledWith('/api/collection');
+	});
+
+	it('should load collection from API', async () => {
+		const mockCollection: ScryfallCard[] = [
+			{
+				id: '1',
+				name: 'Lightning Bolt',
+				type_line: 'Instant'
+			}
+		];
+		
+		mockFetch.mockResolvedValue({
+			ok: true,
+			json: async () => mockCollection
+		});
+		
+		const collection = await loadCollectionFromStorage();
+		expect(collection).toEqual(mockCollection);
+		expect(mockFetch).toHaveBeenCalledWith('/api/collection');
+	});
+
+	it('should fallback to localStorage when API fails', async () => {
+		const mockCollection: ScryfallCard[] = [
+			{
+				id: '1',
+				name: 'Lightning Bolt',
+				type_line: 'Instant'
+			}
+		];
+
+		mockFetch.mockRejectedValue(new Error('API Error'));
+		localStorage.getItem = vi.fn().mockReturnValue(JSON.stringify(mockCollection));
+		
+		const collection = await loadCollectionFromStorage();
+		expect(collection).toEqual(mockCollection);
 		expect(localStorage.getItem).toHaveBeenCalledWith('mtg-collection');
 	});
 
-	it('should load collection from localStorage', () => {
-		const mockCollection: ScryfallCard[] = [
-			{
-				id: '1',
-				name: 'Lightning Bolt',
-				type_line: 'Instant'
-			}
-		];
-		
-		localStorage.getItem = vi.fn().mockReturnValue(JSON.stringify(mockCollection));
-		
-		const collection = loadCollectionFromStorage();
-		expect(collection).toEqual(mockCollection);
-	});
-
-	it('should save collection to localStorage', () => {
-		const mockCollection: ScryfallCard[] = [
-			{
-				id: '1',
-				name: 'Lightning Bolt',
-				type_line: 'Instant'
-			}
-		];
-
-		saveCollectionToStorage(mockCollection);
-		
-		expect(localStorage.setItem).toHaveBeenCalledWith(
-			'mtg-collection',
-			JSON.stringify(mockCollection)
-		);
-	});
-
-	it('should add new card to collection', () => {
-		const existingCollection: ScryfallCard[] = [];
+	it('should add new card via API', async () => {
 		const newCard: ScryfallCard = {
 			id: '1',
 			name: 'Lightning Bolt',
 			type_line: 'Instant'
 		};
 
-		localStorage.getItem = vi.fn().mockReturnValue(JSON.stringify(existingCollection));
+		mockFetch.mockResolvedValue({
+			ok: true,
+			json: async () => ({ success: true })
+		});
+
+		const result = await addCardToCollection(newCard);
+
+		expect(result).toBe(true);
+		expect(mockFetch).toHaveBeenCalledWith('/api/collection', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(newCard)
+		});
+	});
+
+	it('should not add duplicate card (API returns 409)', async () => {
+		const existingCard: ScryfallCard = {
+			id: '1',
+			name: 'Lightning Bolt',
+			type_line: 'Instant'
+		};
+
+		mockFetch.mockResolvedValue({
+			ok: false,
+			status: 409,
+			json: async () => ({ error: 'Card already exists' })
+		});
+
+		const result = await addCardToCollection(existingCard);
+
+		expect(result).toBe(false);
+	});
+
+	it('should remove card via API', async () => {
+		mockFetch.mockResolvedValue({
+			ok: true,
+			json: async () => ({ success: true })
+		});
+
+		const result = await removeCardFromCollection('1');
+
+		expect(result).toBe(true);
+		expect(mockFetch).toHaveBeenCalledWith('/api/collection/1', {
+			method: 'DELETE'
+		});
+	});
+
+	it('should return false when removing non-existent card (API returns 404)', async () => {
+		mockFetch.mockResolvedValue({
+			ok: false,
+			status: 404,
+			json: async () => ({ error: 'Card not found' })
+		});
+
+		const result = await removeCardFromCollection('999');
+
+		expect(result).toBe(false);
+	});
+
+	it('should fallback to localStorage when add API fails', async () => {
+		const newCard: ScryfallCard = {
+			id: '1',
+			name: 'Lightning Bolt',
+			type_line: 'Instant'
+		};
+
+		// Mock API failure
+		mockFetch.mockRejectedValue(new Error('Network error'));
+		
+		// Mock successful localStorage fallback
+		localStorage.getItem = vi.fn().mockReturnValue('[]');
 		localStorage.setItem = vi.fn();
 
-		const result = addCardToCollection(newCard);
+		const result = await addCardToCollection(newCard);
 
 		expect(result).toBe(true);
 		expect(localStorage.setItem).toHaveBeenCalledWith(
@@ -176,51 +269,24 @@ describe('LocalStorage Operations', () => {
 		);
 	});
 
-	it('should not add duplicate card to collection', () => {
-		const existingCard: ScryfallCard = {
-			id: '1',
-			name: 'Lightning Bolt',
-			type_line: 'Instant'
-		};
-		const existingCollection = [existingCard];
-
-		localStorage.getItem = vi.fn().mockReturnValue(JSON.stringify(existingCollection));
-		localStorage.setItem = vi.fn();
-
-		const result = addCardToCollection(existingCard);
-
-		expect(result).toBe(false);
-		expect(localStorage.setItem).not.toHaveBeenCalled();
-	});
-
-	it('should remove card from collection', () => {
+	it('should fallback to localStorage when remove API fails', async () => {
 		const card1: ScryfallCard = { id: '1', name: 'Card 1', type_line: 'Instant' };
 		const card2: ScryfallCard = { id: '2', name: 'Card 2', type_line: 'Creature' };
 		const existingCollection = [card1, card2];
 
+		// Mock API failure
+		mockFetch.mockRejectedValue(new Error('Network error'));
+		
+		// Mock successful localStorage fallback
 		localStorage.getItem = vi.fn().mockReturnValue(JSON.stringify(existingCollection));
 		localStorage.setItem = vi.fn();
 
-		const result = removeCardFromCollection('1');
+		const result = await removeCardFromCollection('1');
 
 		expect(result).toBe(true);
 		expect(localStorage.setItem).toHaveBeenCalledWith(
 			'mtg-collection',
 			JSON.stringify([card2])
 		);
-	});
-
-	it('should return false when removing non-existent card', () => {
-		const existingCollection: ScryfallCard[] = [
-			{ id: '1', name: 'Card 1', type_line: 'Instant' }
-		];
-
-		localStorage.getItem = vi.fn().mockReturnValue(JSON.stringify(existingCollection));
-		localStorage.setItem = vi.fn();
-
-		const result = removeCardFromCollection('999');
-
-		expect(result).toBe(false);
-		expect(localStorage.setItem).not.toHaveBeenCalled();
 	});
 });

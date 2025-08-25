@@ -9,9 +9,16 @@ import {
 } from '../lib/utils';
 
 describe('Collection Integration Tests', () => {
+	const mockFetch = vi.fn();
+	
 	beforeEach(() => {
 		vi.clearAllMocks();
 		localStorage.clear();
+		
+		// Mock global fetch
+		global.fetch = mockFetch;
+		
+		// Mock localStorage
 		localStorage.getItem = vi.fn().mockReturnValue(null);
 		localStorage.setItem = vi.fn();
 	});
@@ -99,5 +106,111 @@ describe('Collection Integration Tests', () => {
 		testCases.forEach(({ input, expected }) => {
 			expect(formatCurrency(input)).toBe(expected);
 		});
+	});
+
+	it('should handle full collection workflow with API', async () => {
+		const collection: ScryfallCard[] = [
+			{
+				id: 'lightning-bolt',
+				name: 'Lightning Bolt',
+				type_line: 'Instant',
+				prices: { usd: '0.50' }
+			},
+			{
+				id: 'counterspell',
+				name: 'Counterspell',
+				type_line: 'Instant',
+				prices: { usd: '2.25' }
+			}
+		];
+
+		// Mock successful API responses
+		mockFetch
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => []
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ success: true })
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ success: true })
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => collection
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => ({ success: true })
+			})
+			.mockResolvedValueOnce({
+				ok: true,
+				json: async () => [collection[1]]
+			});
+
+		// Start with empty collection
+		let result = await loadCollectionFromStorage();
+		expect(result).toEqual([]);
+
+		// Add first card
+		const addResult1 = await addCardToCollection(collection[0]);
+		expect(addResult1).toBe(true);
+
+		// Add second card
+		const addResult2 = await addCardToCollection(collection[1]);
+		expect(addResult2).toBe(true);
+
+		// Load collection with both cards
+		result = await loadCollectionFromStorage();
+		expect(result).toEqual(collection);
+
+		// Test collection value calculation
+		const totalValue = calculateCollectionValue(result);
+		expect(totalValue).toBe(2.75);
+		expect(formatCurrency(totalValue)).toBe('$2.75');
+
+		// Remove first card
+		const removeResult = await removeCardFromCollection('lightning-bolt');
+		expect(removeResult).toBe(true);
+
+		// Load collection with only second card
+		result = await loadCollectionFromStorage();
+		expect(result).toEqual([collection[1]]);
+
+		// Verify final value
+		const finalValue = calculateCollectionValue(result);
+		expect(finalValue).toBe(2.25);
+	});
+
+	it('should handle API failures gracefully with localStorage fallback', async () => {
+		const card: ScryfallCard = {
+			id: 'test-card',
+			name: 'Test Card',
+			type_line: 'Instant',
+			prices: { usd: '1.00' }
+		};
+
+		// Mock API failures
+		mockFetch.mockRejectedValue(new Error('Network error'));
+		
+		// Mock localStorage fallback
+		localStorage.getItem.mockReturnValue('[]');
+		localStorage.setItem.mockImplementation();
+
+		// Should fallback to localStorage
+		const addResult = await addCardToCollection(card);
+		expect(addResult).toBe(true);
+		expect(localStorage.setItem).toHaveBeenCalledWith(
+			'mtg-collection',
+			JSON.stringify([card])
+		);
+
+		// Test loading fallback
+		localStorage.getItem.mockReturnValue(JSON.stringify([card]));
+		const result = await loadCollectionFromStorage();
+		expect(result).toEqual([card]);
 	});
 });

@@ -20,18 +20,18 @@
 	let viewingCollection: boolean = false;
 	let collection: ScryfallCard[] = [];
 
-	function loadCollection(): void {
-		collection = loadCollectionFromStorage();
+	async function loadCollection(): Promise<void> {
+		collection = await loadCollectionFromStorage();
 	}
 
-	function addToCollection(card: ScryfallCard): void {
-		const success = addCardToCollection(card);
+	async function addToCollection(card: ScryfallCard): Promise<void> {
+		const success = await addCardToCollection(card);
 		if (success) {
 			addedToCollection = true;
 			
 			// Update local collection if viewing
 			if (viewingCollection) {
-				loadCollection();
+				await loadCollection();
 			}
 			
 			// Reset the feedback after 2 seconds
@@ -41,21 +41,21 @@
 		}
 	}
 
-	function removeFromCollection(cardId: string): void {
-		removeCardFromCollection(cardId);
+	async function removeFromCollection(cardId: string): Promise<void> {
+		await removeCardFromCollection(cardId);
 		// Update local collection
-		loadCollection();
+		await loadCollection();
 	}
 
-	function toggleCollectionView(): void {
+	async function toggleCollectionView(): Promise<void> {
 		viewingCollection = !viewingCollection;
 		if (viewingCollection) {
-			loadCollection();
+			await loadCollection();
 		}
 	}
 
 	function getCollectionCount(): number {
-		return loadCollectionFromStorage().length;
+		return collection.length;
 	}
 
 	async function searchCard(): Promise<void> {
