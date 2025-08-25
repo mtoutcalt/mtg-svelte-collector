@@ -24,36 +24,40 @@ describe('Collection Integration Tests', () => {
 	});
 
 	it('should handle collection value calculations with real data', () => {
-		// Test with realistic MTG card data
+		// Test with realistic MTG card data including quantities
 		const collection: ScryfallCard[] = [
 			{
 				id: 'lightning-bolt',
 				name: 'Lightning Bolt',
 				type_line: 'Instant',
-				prices: { usd: '0.50' }
+				prices: { usd: '0.50' },
+				quantity: 4
 			},
 			{
 				id: 'black-lotus',
 				name: 'Black Lotus',
 				type_line: 'Artifact',
-				prices: { usd: '15000.00' }
+				prices: { usd: '15000.00' },
+				quantity: 1
 			},
 			{
 				id: 'counterspell',
 				name: 'Counterspell',
 				type_line: 'Instant',
-				prices: { usd: '2.25' }
+				prices: { usd: '2.25' },
+				quantity: 2
 			}
 		];
 
+		// (0.50 * 4) + (15000.00 * 1) + (2.25 * 2) = 2.00 + 15000.00 + 4.50 = 15006.50
 		const totalValue = calculateCollectionValue(collection);
-		expect(totalValue).toBe(15002.75);
-		expect(formatCurrency(totalValue)).toBe('$15,002.75');
+		expect(totalValue).toBe(15006.50);
+		expect(formatCurrency(totalValue)).toBe('$15,006.50');
 
-		// Test individual card values
-		expect(calculateCollectionValue([collection[0]])).toBe(0.50);
-		expect(calculateCollectionValue([collection[1]])).toBe(15000.00);
-		expect(calculateCollectionValue([collection[2]])).toBe(2.25);
+		// Test individual card values with quantities
+		expect(calculateCollectionValue([collection[0]])).toBe(2.00); // 0.50 * 4
+		expect(calculateCollectionValue([collection[1]])).toBe(15000.00); // 15000.00 * 1
+		expect(calculateCollectionValue([collection[2]])).toBe(4.50); // 2.25 * 2
 	});
 
 	it('should handle collection value calculation with mixed price data', () => {
@@ -62,30 +66,35 @@ describe('Collection Integration Tests', () => {
 				id: '1',
 				name: 'Card with price',
 				type_line: 'Instant',
-				prices: { usd: '1.50' }
+				prices: { usd: '1.50' },
+				quantity: 3
 			},
 			{
 				id: '2',
 				name: 'Card without prices object',
-				type_line: 'Creature'
+				type_line: 'Creature',
+				quantity: 2
 			},
 			{
 				id: '3',
 				name: 'Card with empty prices',
 				type_line: 'Land',
-				prices: {}
+				prices: {},
+				quantity: 1
 			},
 			{
 				id: '4',
 				name: 'Card with null USD price',
 				type_line: 'Enchantment',
-				prices: { usd: undefined, eur: '2.00' }
+				prices: { usd: undefined, eur: '2.00' },
+				quantity: 4
 			}
 		];
 
+		// Only the first card has a USD price: 1.50 * 3 = 4.50
 		const totalValue = calculateCollectionValue(cards);
-		expect(totalValue).toBe(1.5);
-		expect(formatCurrency(totalValue)).toBe('$1.50');
+		expect(totalValue).toBe(4.5);
+		expect(formatCurrency(totalValue)).toBe('$4.50');
 	});
 
 	it('should properly format various currency amounts', () => {
@@ -132,11 +141,11 @@ describe('Collection Integration Tests', () => {
 			})
 			.mockResolvedValueOnce({
 				ok: true,
-				json: async () => ({ success: true })
+				json: async () => ({ success: true, message: 'Card added to collection', quantity: 1 })
 			})
 			.mockResolvedValueOnce({
 				ok: true,
-				json: async () => ({ success: true })
+				json: async () => ({ success: true, message: 'Card added to collection', quantity: 1 })
 			})
 			.mockResolvedValueOnce({
 				ok: true,
@@ -144,7 +153,7 @@ describe('Collection Integration Tests', () => {
 			})
 			.mockResolvedValueOnce({
 				ok: true,
-				json: async () => ({ success: true })
+				json: async () => ({ success: true, message: 'Card removed from collection', quantity: 0 })
 			})
 			.mockResolvedValueOnce({
 				ok: true,
@@ -157,24 +166,24 @@ describe('Collection Integration Tests', () => {
 
 		// Add first card
 		const addResult1 = await addCardToCollection(collection[0]);
-		expect(addResult1).toBe(true);
+		expect(addResult1).toEqual({ success: true, message: 'Card added to collection', quantity: 1 });
 
 		// Add second card
 		const addResult2 = await addCardToCollection(collection[1]);
-		expect(addResult2).toBe(true);
+		expect(addResult2).toEqual({ success: true, message: 'Card added to collection', quantity: 1 });
 
 		// Load collection with both cards
 		result = await loadCollectionFromStorage();
 		expect(result).toEqual(collection);
 
-		// Test collection value calculation
+		// Test collection value calculation (with default quantity of 1 each)
 		const totalValue = calculateCollectionValue(result);
-		expect(totalValue).toBe(2.75);
+		expect(totalValue).toBe(2.75); // 0.50 + 2.25
 		expect(formatCurrency(totalValue)).toBe('$2.75');
 
 		// Remove first card
 		const removeResult = await removeCardFromCollection('lightning-bolt');
-		expect(removeResult).toBe(true);
+		expect(removeResult).toEqual({ success: true, message: 'Card removed from collection', quantity: 0 });
 
 		// Load collection with only second card
 		result = await loadCollectionFromStorage();
@@ -197,19 +206,19 @@ describe('Collection Integration Tests', () => {
 		mockFetch.mockRejectedValue(new Error('Network error'));
 		
 		// Mock localStorage fallback
-		localStorage.getItem.mockReturnValue('[]');
-		localStorage.setItem.mockImplementation();
+		(localStorage.getItem as any).mockReturnValue('[]');
+		(localStorage.setItem as any).mockImplementation();
 
 		// Should fallback to localStorage
 		const addResult = await addCardToCollection(card);
-		expect(addResult).toBe(true);
+		expect(addResult).toEqual({ success: true, quantity: 1, message: 'Card added to collection' });
 		expect(localStorage.setItem).toHaveBeenCalledWith(
 			'mtg-collection',
-			JSON.stringify([card])
+			JSON.stringify([{ ...card, quantity: 1 }])
 		);
 
 		// Test loading fallback
-		localStorage.getItem.mockReturnValue(JSON.stringify([card]));
+		(localStorage.getItem as any).mockReturnValue(JSON.stringify([card]));
 		const result = await loadCollectionFromStorage();
 		expect(result).toEqual([card]);
 	});

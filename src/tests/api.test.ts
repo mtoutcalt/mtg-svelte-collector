@@ -50,6 +50,7 @@ vi.mock('../lib/database', () => ({
 		price_usd_foil: card.prices?.usd_foil || null,
 		price_eur: card.prices?.eur || null,
 		price_tix: card.prices?.tix || null,
+		quantity: card.quantity || 1,
 		fuzzy_match: card.fuzzyMatch ? 1 : 0
 	})
 }));
@@ -78,7 +79,7 @@ describe('API Collection Tests', () => {
 			
 			mockStatement.all.mockReturnValue([]);
 			
-			const response = await GET();
+			const response = await GET({} as any);
 			const data = await response.json();
 			
 			expect(data).toEqual([]);
@@ -110,7 +111,7 @@ describe('API Collection Tests', () => {
 			
 			mockStatement.all.mockReturnValue(mockRows);
 			
-			const response = await GET();
+			const response = await GET({} as any);
 			const data = await response.json();
 			
 			expect(data).toHaveLength(1);
@@ -136,8 +137,8 @@ describe('API Collection Tests', () => {
 				oracle_text: 'Lightning Bolt deals 3 damage to any target.'
 			};
 			
-			// Mock that card doesn't exist
-			mockStatement.get.mockReturnValue({ count: 0 });
+			// Mock that card doesn't exist (returns undefined)
+			mockStatement.get.mockReturnValue(undefined);
 			mockStatement.run.mockReturnValue({ changes: 1 });
 			
 			const request = new Request('http://localhost', {
@@ -146,15 +147,15 @@ describe('API Collection Tests', () => {
 				headers: { 'Content-Type': 'application/json' }
 			});
 			
-			const response = await POST({ request });
+			const response = await POST({ request } as any);
 			const data = await response.json();
 			
-			expect(data).toEqual({ success: true, message: 'Card added to collection' });
+			expect(data).toEqual({ success: true, message: 'Card added to collection', quantity: 1 });
 			expect(mockStatement.get).toHaveBeenCalledWith('1');
 			expect(mockStatement.run).toHaveBeenCalled();
 		});
 
-		it('should reject duplicate card', async () => {
+		it('should increment quantity for existing card', async () => {
 			const { POST } = await import('../routes/api/collection/+server');
 			
 			const existingCard: ScryfallCard = {
@@ -163,8 +164,9 @@ describe('API Collection Tests', () => {
 				type_line: 'Instant'
 			};
 			
-			// Mock that card already exists
-			mockStatement.get.mockReturnValue({ count: 1 });
+			// Mock that card already exists with quantity 1
+			mockStatement.get.mockReturnValue({ quantity: 1 });
+			mockStatement.run.mockReturnValue({ changes: 1 });
 			
 			const request = new Request('http://localhost', {
 				method: 'POST',
@@ -172,11 +174,11 @@ describe('API Collection Tests', () => {
 				headers: { 'Content-Type': 'application/json' }
 			});
 			
-			const response = await POST({ request });
+			const response = await POST({ request } as any);
 			const data = await response.json();
 			
-			expect(response.status).toBe(409);
-			expect(data).toEqual({ error: 'Card already in collection', exists: true });
+			expect(response.status).toBe(200);
+			expect(data).toEqual({ success: true, message: 'Card quantity updated to 2', quantity: 2 });
 		});
 
 		it('should reject invalid card data', async () => {
@@ -193,7 +195,7 @@ describe('API Collection Tests', () => {
 				headers: { 'Content-Type': 'application/json' }
 			});
 			
-			const response = await POST({ request });
+			const response = await POST({ request } as any);
 			const data = await response.json();
 			
 			expect(response.status).toBe(400);
@@ -205,21 +207,31 @@ describe('API Collection Tests', () => {
 		it('should remove card successfully', async () => {
 			const { DELETE } = await import('../routes/api/collection/[id]/+server');
 			
+			// Mock card with quantity 1, so it will be fully removed
+			mockStatement.get.mockReturnValue({ quantity: 1 });
 			mockStatement.run.mockReturnValue({ changes: 1 });
 			
-			const response = await DELETE({ params: { id: '1' } });
+			const url = new URL('http://localhost/api/collection/1');
+			const response = await DELETE({ 
+				params: { id: '1' }, 
+				url 
+			} as any);
 			const data = await response.json();
 			
-			expect(data).toEqual({ success: true, message: 'Card removed from collection' });
-			expect(mockStatement.run).toHaveBeenCalledWith('1');
+			expect(data).toEqual({ success: true, message: 'Card removed from collection', quantity: 0 });
 		});
 
 		it('should return 404 when card not found', async () => {
 			const { DELETE } = await import('../routes/api/collection/[id]/+server');
 			
-			mockStatement.run.mockReturnValue({ changes: 0 });
+			// Mock that card doesn't exist
+			mockStatement.get.mockReturnValue(undefined);
 			
-			const response = await DELETE({ params: { id: '999' } });
+			const url = new URL('http://localhost/api/collection/999');
+			const response = await DELETE({ 
+				params: { id: '999' }, 
+				url 
+			} as any);
 			const data = await response.json();
 			
 			expect(response.status).toBe(404);
@@ -229,7 +241,11 @@ describe('API Collection Tests', () => {
 		it('should return 400 when id is missing', async () => {
 			const { DELETE } = await import('../routes/api/collection/[id]/+server');
 			
-			const response = await DELETE({ params: { id: '' } });
+			const url = new URL('http://localhost/api/collection/');
+			const response = await DELETE({ 
+				params: { id: '' }, 
+				url 
+			} as any);
 			const data = await response.json();
 			
 			expect(response.status).toBe(400);

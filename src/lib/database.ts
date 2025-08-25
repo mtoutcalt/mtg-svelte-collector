@@ -41,6 +41,7 @@ function initializeDatabase(database: Database.Database): void {
 			price_usd_foil TEXT,
 			price_eur TEXT,
 			price_tix TEXT,
+			quantity INTEGER DEFAULT 1,
 			fuzzy_match INTEGER DEFAULT 0,
 			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -51,11 +52,22 @@ function initializeDatabase(database: Database.Database): void {
 	const createIndexes = [
 		`CREATE INDEX IF NOT EXISTS idx_cards_name ON cards(name)`,
 		`CREATE INDEX IF NOT EXISTS idx_cards_type_line ON cards(type_line)`,
-		`CREATE INDEX IF NOT EXISTS idx_cards_created_at ON cards(created_at)`
+		`CREATE INDEX IF NOT EXISTS idx_cards_created_at ON cards(created_at)`,
+		`CREATE INDEX IF NOT EXISTS idx_cards_quantity ON cards(quantity)`
 	];
 
 	try {
 		database.exec(createCardsTable);
+		
+		// Check if quantity column exists, if not add it for existing databases
+		const columnInfo = database.prepare("PRAGMA table_info(cards)").all() as Array<{name: string}>;
+		const hasQuantityColumn = columnInfo.some(col => col.name === 'quantity');
+		
+		if (!hasQuantityColumn) {
+			database.exec('ALTER TABLE cards ADD COLUMN quantity INTEGER DEFAULT 1');
+			database.exec('UPDATE cards SET quantity = 1 WHERE quantity IS NULL');
+		}
+		
 		createIndexes.forEach(indexQuery => database.exec(indexQuery));
 		
 		// Create triggers to automatically update the updated_at timestamp
@@ -100,6 +112,7 @@ export interface CardRow {
 	price_usd_foil: string | null;
 	price_eur: string | null;
 	price_tix: string | null;
+	quantity: number;
 	fuzzy_match: number;
 	created_at: string;
 	updated_at: string;
@@ -123,6 +136,7 @@ export function cardRowToScryfallCard(row: CardRow): ScryfallCard {
 			eur: row.price_eur || undefined,
 			tix: row.price_tix || undefined
 		},
+		quantity: row.quantity,
 		fuzzyMatch: row.fuzzy_match === 1
 	};
 }
@@ -141,6 +155,7 @@ export function scryfallCardToCardRow(card: ScryfallCard): Omit<CardRow, 'create
 		price_usd_foil: card.prices?.usd_foil || null,
 		price_eur: card.prices?.eur || null,
 		price_tix: card.prices?.tix || null,
+		quantity: card.quantity || 1,
 		fuzzy_match: card.fuzzyMatch ? 1 : 0
 	};
 }

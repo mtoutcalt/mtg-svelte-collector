@@ -15,6 +15,7 @@ export interface ScryfallCard {
 		eur?: string;
 		tix?: string;
 	};
+	quantity?: number;
 	fuzzyMatch?: boolean;
 }
 
@@ -43,7 +44,8 @@ export function isCard(data: CardData): data is ScryfallCard {
 export function calculateCollectionValue(collection: ScryfallCard[]): number {
 	return collection.reduce((total, card) => {
 		const price = parseFloat(card.prices?.usd || '0');
-		return total + price;
+		const quantity = card.quantity || 1;
+		return total + (price * quantity);
 	}, 0);
 }
 
@@ -75,69 +77,100 @@ export async function loadCollectionFromStorage(): Promise<ScryfallCard[]> {
 	}
 }
 
-export async function addCardToCollection(card: ScryfallCard): Promise<boolean> {
+export async function addCardToCollection(card: ScryfallCard, quantity: number = 1): Promise<{ success: boolean; quantity?: number; message?: string }> {
 	try {
+		const cardWithQuantity = { ...card, quantity };
 		const response = await fetch('/api/collection', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify(card)
+			body: JSON.stringify(cardWithQuantity)
 		});
 		
 		if (response.ok) {
-			return true;
-		} else if (response.status === 409) {
-			// Card already exists
-			return false;
+			const data = await response.json();
+			return { success: true, quantity: data.quantity, message: data.message };
 		} else {
-			console.error('Failed to add card:', response.statusText);
-			return false;
+			const errorData = await response.json();
+			console.error('Failed to add card:', errorData.error);
+			return { success: false, message: errorData.error };
 		}
 	} catch (error) {
 		console.error('Error adding card to collection:', error);
 		// Fallback to localStorage
 		if (typeof window !== 'undefined') {
 			const collection = await loadCollectionFromStorage();
-			const exists = collection.some(c => c.id === card.id);
+			const existingIndex = collection.findIndex(c => c.id === card.id);
 			
-			if (!exists) {
-				collection.push(card);
-				localStorage.setItem('mtg-collection', JSON.stringify(collection));
-				return true;
+			if (existingIndex >= 0) {
+				collection[existingIndex].quantity = (collection[existingIndex].quantity || 1) + quantity;
+			} else {
+				collection.push({ ...card, quantity });
 			}
+			localStorage.setItem('mtg-collection', JSON.stringify(collection));
+			return { success: true, quantity, message: 'Card added to collection' };
 		}
-		return false;
+		return { success: false, message: 'Failed to add card' };
 	}
 }
 
-export async function removeCardFromCollection(cardId: string): Promise<boolean> {
+export async function removeCardFromCollection(cardId: string, removeAll: boolean = false): Promise<{ success: boolean; quantity?: number; message?: string }> {
 	try {
-		const response = await fetch(`/api/collection/${cardId}`, {
+		const url = removeAll ? `/api/collection/${cardId}?all=true` : `/api/collection/${cardId}`;
+		const response = await fetch(url, {
 			method: 'DELETE'
 		});
 		
 		if (response.ok) {
-			return true;
-		} else if (response.status === 404) {
-			// Card not found
-			return false;
+			const data = await response.json();
+			return { success: true, quantity: data.quantity, message: data.message };
 		} else {
-			console.error('Failed to remove card:', response.statusText);
-			return false;
+			const errorData = await response.json();
+			console.error('Failed to remove card:', errorData.error);
+			return { success: false, message: errorData.error };
 		}
 	} catch (error) {
 		console.error('Error removing card from collection:', error);
 		// Fallback to localStorage
 		if (typeof window !== 'undefined') {
 			const collection = await loadCollectionFromStorage();
-			const updatedCollection = collection.filter(c => c.id !== cardId);
+			const cardIndex = collection.findIndex(c => c.id === cardId);
 			
-			if (updatedCollection.length < collection.length) {
-				localStorage.setItem('mtg-collection', JSON.stringify(updatedCollection));
-				return true;
+			if (cardIndex >= 0) {
+				if (removeAll || (collection[cardIndex].quantity || 1) <= 1) {
+					collection.splice(cardIndex, 1);
+				} else {
+					collection[cardIndex].quantity = (collection[cardIndex].quantity || 1) - 1;
+				}
+				localStorage.setItem('mtg-collection', JSON.stringify(collection));
+				return { success: true, message: 'Card updated' };
 			}
 		}
-		return false;
+		return { success: false, message: 'Failed to remove card' };
+	}
+}
+
+export async function updateCardQuantity(cardId: string, quantity: number): Promise<{ success: boolean; quantity?: number; message?: string }> {
+	try {
+		const response = await fetch('/api/collection/quantity', {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ cardId, quantity })
+		});
+		
+		if (response.ok) {
+			const data = await response.json();
+			return { success: true, quantity: data.quantity, message: data.message };
+		} else {
+			const errorData = await response.json();
+			console.error('Failed to update quantity:', errorData.error);
+			return { success: false, message: errorData.error };
+		}
+	} catch (error) {
+		console.error('Error updating card quantity:', error);
+		return { success: false, message: 'Failed to update quantity' };
 	}
 }

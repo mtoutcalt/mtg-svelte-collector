@@ -5,9 +5,9 @@ import {
 	calculateCollectionValue,
 	formatCurrency,
 	loadCollectionFromStorage,
-	saveCollectionToStorage,
 	addCardToCollection,
 	removeCardFromCollection,
+	updateCardQuantity,
 	type ScryfallCard,
 	type ScryfallError
 } from './utils';
@@ -47,23 +47,27 @@ describe('Collection Value Calculation', () => {
 				id: '1',
 				name: 'Card 1',
 				type_line: 'Instant',
-				prices: { usd: '1.50' }
+				prices: { usd: '1.50' },
+				quantity: 2
 			},
 			{
 				id: '2',
 				name: 'Card 2',
 				type_line: 'Creature',
-				prices: { usd: '2.25' }
+				prices: { usd: '2.25' },
+				quantity: 1
 			},
 			{
 				id: '3',
 				name: 'Card 3',
 				type_line: 'Land',
-				prices: { usd: '0.75' }
+				prices: { usd: '0.75' },
+				quantity: 3
 			}
 		];
 
-		expect(calculateCollectionValue(collection)).toBe(4.5);
+		// (1.50 * 2) + (2.25 * 1) + (0.75 * 3) = 3.00 + 2.25 + 2.25 = 7.50
+		expect(calculateCollectionValue(collection)).toBe(7.5);
 	});
 
 	it('should handle cards without prices', () => {
@@ -187,22 +191,22 @@ describe('Collection API Operations', () => {
 
 		mockFetch.mockResolvedValue({
 			ok: true,
-			json: async () => ({ success: true })
+			json: async () => ({ success: true, message: 'Card added', quantity: 1 })
 		});
 
 		const result = await addCardToCollection(newCard);
 
-		expect(result).toBe(true);
+		expect(result).toEqual({ success: true, message: 'Card added', quantity: 1 });
 		expect(mockFetch).toHaveBeenCalledWith('/api/collection', {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify(newCard)
+			body: JSON.stringify({ ...newCard, quantity: 1 })
 		});
 	});
 
-	it('should not add duplicate card (API returns 409)', async () => {
+	it('should handle adding card when it already exists (increments quantity)', async () => {
 		const existingCard: ScryfallCard = {
 			id: '1',
 			name: 'Lightning Bolt',
@@ -210,31 +214,30 @@ describe('Collection API Operations', () => {
 		};
 
 		mockFetch.mockResolvedValue({
-			ok: false,
-			status: 409,
-			json: async () => ({ error: 'Card already exists' })
+			ok: true,
+			json: async () => ({ success: true, message: 'Card quantity updated to 2', quantity: 2 })
 		});
 
 		const result = await addCardToCollection(existingCard);
 
-		expect(result).toBe(false);
+		expect(result).toEqual({ success: true, message: 'Card quantity updated to 2', quantity: 2 });
 	});
 
 	it('should remove card via API', async () => {
 		mockFetch.mockResolvedValue({
 			ok: true,
-			json: async () => ({ success: true })
+			json: async () => ({ success: true, message: 'Card removed', quantity: 0 })
 		});
 
 		const result = await removeCardFromCollection('1');
 
-		expect(result).toBe(true);
+		expect(result).toEqual({ success: true, message: 'Card removed', quantity: 0 });
 		expect(mockFetch).toHaveBeenCalledWith('/api/collection/1', {
 			method: 'DELETE'
 		});
 	});
 
-	it('should return false when removing non-existent card (API returns 404)', async () => {
+	it('should return error when removing non-existent card (API returns 404)', async () => {
 		mockFetch.mockResolvedValue({
 			ok: false,
 			status: 404,
@@ -243,7 +246,7 @@ describe('Collection API Operations', () => {
 
 		const result = await removeCardFromCollection('999');
 
-		expect(result).toBe(false);
+		expect(result).toEqual({ success: false, message: 'Card not found' });
 	});
 
 	it('should fallback to localStorage when add API fails', async () => {
@@ -262,16 +265,16 @@ describe('Collection API Operations', () => {
 
 		const result = await addCardToCollection(newCard);
 
-		expect(result).toBe(true);
+		expect(result).toEqual({ success: true, quantity: 1, message: 'Card added to collection' });
 		expect(localStorage.setItem).toHaveBeenCalledWith(
 			'mtg-collection',
-			JSON.stringify([newCard])
+			JSON.stringify([{ ...newCard, quantity: 1 }])
 		);
 	});
 
 	it('should fallback to localStorage when remove API fails', async () => {
-		const card1: ScryfallCard = { id: '1', name: 'Card 1', type_line: 'Instant' };
-		const card2: ScryfallCard = { id: '2', name: 'Card 2', type_line: 'Creature' };
+		const card1: ScryfallCard = { id: '1', name: 'Card 1', type_line: 'Instant', quantity: 1 };
+		const card2: ScryfallCard = { id: '2', name: 'Card 2', type_line: 'Creature', quantity: 1 };
 		const existingCollection = [card1, card2];
 
 		// Mock API failure
@@ -283,10 +286,28 @@ describe('Collection API Operations', () => {
 
 		const result = await removeCardFromCollection('1');
 
-		expect(result).toBe(true);
+		expect(result).toEqual({ success: true, message: 'Card updated' });
 		expect(localStorage.setItem).toHaveBeenCalledWith(
 			'mtg-collection',
 			JSON.stringify([card2])
 		);
+	});
+
+	it('should update card quantity via API', async () => {
+		mockFetch.mockResolvedValue({
+			ok: true,
+			json: async () => ({ success: true, message: 'Card quantity updated', quantity: 3 })
+		});
+
+		const result = await updateCardQuantity('1', 3);
+
+		expect(result).toEqual({ success: true, message: 'Card quantity updated', quantity: 3 });
+		expect(mockFetch).toHaveBeenCalledWith('/api/collection/quantity', {
+			method: 'PUT',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({ cardId: '1', quantity: 3 })
+		});
 	});
 });

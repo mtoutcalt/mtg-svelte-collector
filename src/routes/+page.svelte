@@ -10,13 +10,15 @@
 		formatCurrency,
 		loadCollectionFromStorage,
 		addCardToCollection,
-		removeCardFromCollection
+		removeCardFromCollection,
+		updateCardQuantity
 	} from '$lib/utils';
 
 	let cardName: string = '';
 	let cardData: CardData = null;
 	let loading: boolean = false;
 	let addedToCollection: boolean = false;
+	let addMessage: string = '';
 	let viewingCollection: boolean = false;
 	let collection: ScryfallCard[] = [];
 
@@ -24,27 +26,39 @@
 		collection = await loadCollectionFromStorage();
 	}
 
-	async function addToCollection(card: ScryfallCard): Promise<void> {
-		const success = await addCardToCollection(card);
-		if (success) {
+	async function addToCollection(card: ScryfallCard, quantity: number = 1): Promise<void> {
+		const result = await addCardToCollection(card, quantity);
+		if (result.success) {
 			addedToCollection = true;
+			addMessage = result.message || 'Added to collection!';
 			
 			// Update local collection if viewing
 			if (viewingCollection) {
 				await loadCollection();
 			}
 			
-			// Reset the feedback after 2 seconds
+			// Reset the feedback after 3 seconds
 			setTimeout(() => {
 				addedToCollection = false;
-			}, 2000);
+				addMessage = '';
+			}, 3000);
 		}
 	}
 
-	async function removeFromCollection(cardId: string): Promise<void> {
-		await removeCardFromCollection(cardId);
-		// Update local collection
-		await loadCollection();
+	async function removeFromCollection(cardId: string, removeAll: boolean = false): Promise<void> {
+		const result = await removeCardFromCollection(cardId, removeAll);
+		if (result.success) {
+			// Update local collection
+			await loadCollection();
+		}
+	}
+
+	async function updateQuantity(cardId: string, quantity: number): Promise<void> {
+		const result = await updateCardQuantity(cardId, quantity);
+		if (result.success) {
+			// Update local collection
+			await loadCollection();
+		}
 	}
 
 	async function toggleCollectionView(): Promise<void> {
@@ -55,6 +69,10 @@
 	}
 
 	function getCollectionCount(): number {
+		return collection.reduce((total, card) => total + (card.quantity || 1), 0);
+	}
+
+	function getUniqueCardCount(): number {
 		return collection.length;
 	}
 
@@ -122,7 +140,7 @@
 
 <div class="top-nav">
 	<button class="collection-button" on:click={toggleCollectionView}>
-		{viewingCollection ? '← Back to Search' : `📚 View Collection (${getCollectionCount()})`}
+		{viewingCollection ? '← Back to Search' : `📚 View Collection (${getCollectionCount()} cards, ${getUniqueCardCount()} unique)`}
 	</button>
 </div>
 
@@ -167,13 +185,25 @@
 				<p><strong>Text:</strong> {cardData.oracle_text || 'No text'}</p>
 				
 				<div class="card-actions">
-					<button 
-						class="add-button" 
-						on:click={() => isCard(cardData) && addToCollection(cardData)}
-						disabled={addedToCollection}
-					>
-						{addedToCollection ? '✓ Added!' : '+ Add to Collection'}
-					</button>
+					<div class="quantity-controls">
+						<button 
+							class="quantity-btn"
+							on:click={() => isCard(cardData) && addToCollection(cardData, 1)}
+							disabled={addedToCollection}
+						>
+							{addedToCollection ? '✓ Added!' : '+ Add 1'}
+						</button>
+						<button 
+							class="quantity-btn quantity-btn-multi"
+							on:click={() => isCard(cardData) && addToCollection(cardData, 4)}
+							disabled={addedToCollection}
+						>
+							+ Add 4
+						</button>
+					</div>
+					{#if addedToCollection && addMessage}
+						<div class="add-message">{addMessage}</div>
+					{/if}
 				</div>
 			</div>
 		</div>
@@ -186,7 +216,7 @@
 <!-- Collection View -->
 <div class="collection-view">
 	<div class="collection-header">
-		<h2>My Collection ({collection.length} cards)</h2>
+		<h2>My Collection ({getCollectionCount()} cards, {getUniqueCardCount()} unique)</h2>
 		{#if collection.length > 0}
 			<div class="collection-value">
 				<strong>Total Worth: {formatCurrency(calculateCollectionValue(collection))}</strong>
@@ -204,14 +234,36 @@
 					<div class="collection-card-info">
 						<h3>{card.name}</h3>
 						<p class="card-type">{card.type_line}</p>
-						<p class="card-price">{card.prices?.usd ? `$${card.prices.usd}` : 'N/A'}</p>
-						<button 
-							class="remove-button" 
-							on:click={() => removeFromCollection(card.id)}
-							title="Remove from collection"
-						>
-							🗑️ Remove
-						</button>
+						<p class="card-price">{card.prices?.usd ? `$${card.prices.usd} each` : 'N/A'}</p>
+						<div class="quantity-display">
+							<span class="quantity-label">Quantity: <strong>{card.quantity || 1}</strong></span>
+							<div class="quantity-controls-collection">
+								<button 
+									class="quantity-btn-small"
+									on:click={() => updateQuantity(card.id, (card.quantity || 1) + 1)}
+									title="Add one"
+								>
+									+
+								</button>
+								<button 
+									class="quantity-btn-small"
+									on:click={() => removeFromCollection(card.id, false)}
+									title="Remove one"
+									disabled={(card.quantity || 1) <= 1}
+								>
+									-
+								</button>
+							</div>
+						</div>
+						<div class="card-buttons">
+							<button 
+								class="remove-button" 
+								on:click={() => removeFromCollection(card.id, true)}
+								title="Remove all copies"
+							>
+								🗑️ Remove All
+							</button>
+						</div>
 					</div>
 				</div>
 			{/each}
@@ -256,6 +308,7 @@
 		font-weight: 700;
 		background: linear-gradient(45deg, #c9b037, #f4e58c, #c9b037, #8b7328);
 		background-size: 300% 300%;
+		background-clip: text;
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		text-shadow: 0 4px 20px rgba(201, 176, 55, 0.5);
@@ -494,32 +547,56 @@
 		margin-top: 2rem;
 	}
 	
-	.add-button {
+	.quantity-controls {
+		display: flex;
+		gap: 10px;
+		margin-bottom: 1rem;
+	}
+	
+	.quantity-btn {
 		background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
 		color: white;
 		border: none;
-		padding: 15px 30px;
-		border-radius: 15px;
+		padding: 12px 20px;
+		border-radius: 12px;
 		cursor: pointer;
-		font-size: 16px;
+		font-size: 14px;
 		font-family: 'Cinzel', serif;
 		font-weight: 600;
 		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+		box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+		flex: 1;
 	}
 	
-	.add-button:hover:not(:disabled) {
-		transform: translateY(-3px);
-		box-shadow: 0 12px 35px rgba(76, 175, 80, 0.6);
-		background: linear-gradient(135deg, #5cbf60 0%, #72c876 100%);
+	.quantity-btn-multi {
+		background: linear-gradient(135deg, #2196F3 0%, #42A5F5 100%);
+		box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
 	}
 	
-	.add-button:disabled {
-		background: linear-gradient(135deg, #81c784 0%, #a5d6a7 100%);
+	.quantity-btn:hover:not(:disabled) {
+		transform: translateY(-2px);
+		box-shadow: 0 10px 30px rgba(76, 175, 80, 0.6);
+	}
+	
+	.quantity-btn-multi:hover:not(:disabled) {
+		box-shadow: 0 10px 30px rgba(33, 150, 243, 0.6);
+	}
+	
+	.quantity-btn:disabled {
+		opacity: 0.7;
 		cursor: not-allowed;
 		transform: none;
-		box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
 	}
+	
+	.add-message {
+		text-align: center;
+		color: #4caf50;
+		font-style: italic;
+		font-size: 0.9rem;
+		margin-top: 0.5rem;
+		font-weight: 600;
+	}
+	
 	
 	.skeleton {
 		background: linear-gradient(
@@ -682,11 +759,64 @@
 	}
 	
 	.collection-card-info .card-price {
-		margin: 0 0 15px 0;
+		margin: 0 0 10px 0;
 		font-size: 1rem;
 		font-weight: 600;
 		color: #4caf50;
 		font-family: 'Cinzel', serif;
+	}
+	
+	.quantity-display {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin: 10px 0 15px 0;
+		padding: 8px 12px;
+		background: rgba(255, 255, 255, 0.05);
+		border-radius: 8px;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+	}
+	
+	.quantity-label {
+		font-size: 0.9rem;
+		color: #e8e9ed;
+	}
+	
+	.quantity-controls-collection {
+		display: flex;
+		gap: 5px;
+	}
+	
+	.quantity-btn-small {
+		background: linear-gradient(135deg, #6a4c93 0%, #9b59b6 100%);
+		color: white;
+		border: none;
+		padding: 4px 8px;
+		border-radius: 6px;
+		cursor: pointer;
+		font-size: 12px;
+		font-weight: bold;
+		transition: all 0.3s ease;
+		min-width: 24px;
+		height: 24px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	
+	.quantity-btn-small:hover:not(:disabled) {
+		transform: translateY(-1px);
+		background: linear-gradient(135deg, #7c5ba6 0%, #a569c7 100%);
+	}
+	
+	.quantity-btn-small:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+		transform: none;
+	}
+	
+	.card-buttons {
+		margin-top: 10px;
 	}
 	
 	.remove-button {

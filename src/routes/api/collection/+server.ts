@@ -18,7 +18,7 @@ export const GET: RequestHandler = async () => {
 	}
 };
 
-// POST /api/collection - Add a card to collection
+// POST /api/collection - Add a card to collection or update quantity
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const card: ScryfallCard = await request.json();
@@ -28,29 +28,34 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 		
 		const db = getDatabase();
-		const checkStmt = db.prepare('SELECT COUNT(*) as count FROM cards WHERE id = ?');
-		const result = checkStmt.get(card.id) as { count: number };
+		const checkStmt = db.prepare('SELECT quantity FROM cards WHERE id = ?');
+		const existingCard = checkStmt.get(card.id) as { quantity: number } | undefined;
 		
-		if (result.count > 0) {
-			return json({ error: 'Card already in collection', exists: true }, { status: 409 });
+		if (existingCard) {
+			// Card exists, increment quantity
+			const newQuantity = existingCard.quantity + (card.quantity || 1);
+			const updateStmt = db.prepare('UPDATE cards SET quantity = ? WHERE id = ?');
+			updateStmt.run(newQuantity, card.id);
+			return json({ success: true, message: `Card quantity updated to ${newQuantity}`, quantity: newQuantity });
+		} else {
+			// New card, insert with quantity
+			const row = scryfallCardToCardRow(card);
+			const insertStmt = db.prepare(`
+				INSERT INTO cards (
+					id, name, mana_cost, type_line, oracle_text,
+					image_normal, image_small, image_large,
+					price_usd, price_usd_foil, price_eur, price_tix, quantity, fuzzy_match
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`);
+			
+			insertStmt.run(
+				row.id, row.name, row.mana_cost, row.type_line, row.oracle_text,
+				row.image_normal, row.image_small, row.image_large,
+				row.price_usd, row.price_usd_foil, row.price_eur, row.price_tix, row.quantity, row.fuzzy_match
+			);
+			
+			return json({ success: true, message: 'Card added to collection', quantity: row.quantity });
 		}
-		
-		const row = scryfallCardToCardRow(card);
-		const insertStmt = db.prepare(`
-			INSERT INTO cards (
-				id, name, mana_cost, type_line, oracle_text,
-				image_normal, image_small, image_large,
-				price_usd, price_usd_foil, price_eur, price_tix, fuzzy_match
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		`);
-		
-		insertStmt.run(
-			row.id, row.name, row.mana_cost, row.type_line, row.oracle_text,
-			row.image_normal, row.image_small, row.image_large,
-			row.price_usd, row.price_usd_foil, row.price_eur, row.price_tix, row.fuzzy_match
-		);
-		
-		return json({ success: true, message: 'Card added to collection' });
 	} catch (error) {
 		console.error('Error adding card to collection:', error);
 		return json({ error: 'Failed to add card to collection' }, { status: 500 });
