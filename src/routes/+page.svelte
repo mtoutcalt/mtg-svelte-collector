@@ -21,6 +21,9 @@
 	let addMessage: string = '';
 	let viewingCollection: boolean = false;
 	let collection: ScryfallCard[] = [];
+	let showImageModal: boolean = false;
+	let modalImageSrc: string = '';
+	let modalImageName: string = '';
 
 	async function loadCollection(): Promise<void> {
 		collection = await loadCollectionFromStorage();
@@ -134,6 +137,18 @@
 		}
 		loading = false;
 	}
+
+	function openImageModal(imageSrc: string, imageName: string): void {
+		modalImageSrc = imageSrc;
+		modalImageName = imageName;
+		showImageModal = true;
+	}
+
+	function closeImageModal(): void {
+		showImageModal = false;
+		modalImageSrc = '';
+		modalImageName = '';
+	}
 </script>
 
 <h1 class="main-title">Magic Card Search</h1>
@@ -176,7 +191,22 @@
 	{/if}
 	<div class="card-info">
 		<div class="card-content">
-			<img src={cardData.image_uris?.normal} alt={cardData.name} class="card-image" />
+			<button
+				class="image-button"
+				on:click={() => {
+					if (isCard(cardData)) {
+						openImageModal(cardData.image_uris?.large || cardData.image_uris?.normal || '', cardData.name);
+					}
+				}}
+				title="Click to enlarge"
+				aria-label="View larger image of {cardData.name}"
+			>
+				<img 
+					src={cardData.image_uris?.normal} 
+					alt={cardData.name} 
+					class="card-image"
+				/>
+			</button>
 			<div class="card-details">
 				<h2>{cardData.name}</h2>
 				<p><strong>Mana Cost:</strong> {cardData.mana_cost || 'N/A'}</p>
@@ -230,7 +260,18 @@
 		<div class="collection-grid">
 			{#each collection as card}
 				<div class="collection-card">
-					<img src={card.image_uris?.normal} alt={card.name} class="collection-card-image" />
+					<button
+						class="image-button collection-image-button"
+						on:click={() => openImageModal(card.image_uris?.large || card.image_uris?.normal || '', card.name)}
+						title="Click to enlarge"
+						aria-label="View larger image of {card.name}"
+					>
+						<img 
+							src={card.image_uris?.normal} 
+							alt={card.name} 
+							class="collection-card-image"
+						/>
+					</button>
 					<div class="collection-card-info">
 						<h3>{card.name}</h3>
 						<p class="card-type">{card.type_line}</p>
@@ -270,6 +311,17 @@
 		</div>
 	{/if}
 </div>
+{/if}
+
+<!-- Image Modal -->
+{#if showImageModal}
+	<div class="modal-overlay" on:click={closeImageModal} on:keydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && closeImageModal()} role="button" tabindex="0" aria-label="Close modal">
+		<div class="modal-content" on:click|stopPropagation>
+			<button class="modal-close" on:click={closeImageModal} title="Close">&times;</button>
+			<img src={modalImageSrc} alt={modalImageName} class="modal-image" />
+			<div class="modal-title">{modalImageName}</div>
+		</div>
+	</div>
 {/if}
 
 <style>
@@ -571,8 +623,28 @@
 		transition: transform 0.3s ease;
 	}
 
-	.card-image:hover {
+	.image-button {
+		background: none;
+		border: none;
+		padding: 0;
+		cursor: pointer;
+		display: block;
+		transition: transform 0.3s ease;
+	}
+
+	.image-button:hover {
 		transform: scale(1.05);
+	}
+
+	.image-button:focus {
+		outline: 3px solid var(--color-primary-gold);
+		outline-offset: 3px;
+		border-radius: var(--radius-xl);
+	}
+
+	.collection-image-button {
+		width: 100%;
+		display: block;
 	}
 	
 	.card-details {
@@ -973,5 +1045,104 @@
 
 	:global(::-webkit-scrollbar-thumb:hover) {
 		background: linear-gradient(180deg, var(--color-primary-gold-variant), var(--color-primary-gold-darker));
+	}
+
+	/* Modal Styles */
+	.modal-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		background: rgba(0, 0, 0, 0.85);
+		backdrop-filter: var(--backdrop-blur-lg);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 1000;
+		animation: modalFadeIn 0.3s ease-out;
+	}
+
+	.modal-content {
+		position: relative;
+		max-width: 90vw;
+		max-height: 90vh;
+		background: linear-gradient(135deg, var(--bg-glass-primary) 0%, var(--bg-glass-secondary) 100%);
+		border: 2px solid var(--border-glass-primary);
+		border-radius: var(--radius-xl);
+		backdrop-filter: var(--backdrop-blur-lg);
+		box-shadow: var(--shadow-3xl) rgba(0, 0, 0, 0.8);
+		padding: var(--spacing-xl);
+		animation: modalSlideIn 0.3s ease-out;
+	}
+
+	.modal-close {
+		position: absolute;
+		top: var(--spacing-md);
+		right: var(--spacing-md);
+		background: linear-gradient(135deg, var(--color-red-primary) 0%, var(--color-red-secondary) 100%);
+		border: none;
+		color: white;
+		font-size: 28px;
+		font-weight: bold;
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: var(--transition-smooth);
+		z-index: 1001;
+		box-shadow: var(--shadow-medium) rgba(244, 67, 54, 0.4);
+	}
+
+	.modal-close:hover {
+		transform: scale(1.1);
+		background: linear-gradient(135deg, var(--color-red-hover) 0%, var(--color-red-variant) 100%);
+		box-shadow: var(--shadow-large) rgba(244, 67, 54, 0.6);
+	}
+
+	.modal-image {
+		max-width: 100%;
+		max-height: 80vh;
+		width: auto;
+		height: auto;
+		border-radius: var(--radius-large);
+		box-shadow: 
+			var(--shadow-3xl) rgba(0, 0, 0, 0.6),
+			0 0 0 1px rgba(255, 255, 255, 0.1);
+		display: block;
+		margin: 0 auto;
+	}
+
+	.modal-title {
+		text-align: center;
+		margin-top: var(--spacing-lg);
+		font-family: var(--font-primary);
+		font-size: 1.5rem;
+		font-weight: var(--font-weight-medium);
+		color: var(--color-primary-gold);
+		text-shadow: 0 2px 10px rgba(201, 176, 55, 0.5);
+	}
+
+	@keyframes modalFadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes modalSlideIn {
+		from {
+			opacity: 0;
+			transform: translateY(-50px) scale(0.9);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
 	}
 </style>
