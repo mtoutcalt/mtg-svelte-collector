@@ -24,6 +24,7 @@
 	let showImageModal: boolean = false;
 	let modalImageSrc: string = '';
 	let modalImageName: string = '';
+	let sortBy: string = 'value-desc';
 
 	async function loadCollection(): Promise<void> {
 		collection = await loadCollectionFromStorage();
@@ -149,6 +150,39 @@
 		modalImageSrc = '';
 		modalImageName = '';
 	}
+
+	function getSortedCollection(): ScryfallCard[] {
+		const sorted = [...collection];
+		
+		switch (sortBy) {
+			case 'value-desc':
+				return sorted.sort((a, b) => {
+					const aValue = parseFloat(a.prices?.usd || '0');
+					const bValue = parseFloat(b.prices?.usd || '0');
+					return bValue - aValue;
+				});
+			case 'value-asc':
+				return sorted.sort((a, b) => {
+					const aValue = parseFloat(a.prices?.usd || '0');
+					const bValue = parseFloat(b.prices?.usd || '0');
+					return aValue - bValue;
+				});
+			case 'name-asc':
+				return sorted.sort((a, b) => a.name.localeCompare(b.name));
+			case 'name-desc':
+				return sorted.sort((a, b) => b.name.localeCompare(a.name));
+			case 'type-asc':
+				return sorted.sort((a, b) => a.type_line.localeCompare(b.type_line));
+			case 'type-desc':
+				return sorted.sort((a, b) => b.type_line.localeCompare(a.type_line));
+			case 'quantity-desc':
+				return sorted.sort((a, b) => (b.quantity || 1) - (a.quantity || 1));
+			case 'quantity-asc':
+				return sorted.sort((a, b) => (a.quantity || 1) - (b.quantity || 1));
+			default:
+				return sorted;
+		}
+	}
 </script>
 
 <h1 class="main-title">Magic Card Search</h1>
@@ -246,10 +280,27 @@
 <!-- Collection View -->
 <div class="collection-view">
 	<div class="collection-header">
-		<h2>My Collection ({getCollectionCount()} cards, {getUniqueCardCount()} unique)</h2>
+		<div class="collection-info">
+			<h2>My Collection ({getCollectionCount()} cards, {getUniqueCardCount()} unique)</h2>
+			{#if collection.length > 0}
+				<div class="collection-value">
+					<strong>Total Worth: {formatCurrency(calculateCollectionValue(collection))}</strong>
+				</div>
+			{/if}
+		</div>
 		{#if collection.length > 0}
-			<div class="collection-value">
-				<strong>Total Worth: {formatCurrency(calculateCollectionValue(collection))}</strong>
+			<div class="collection-controls">
+				<label for="sort-select" class="sort-label">Sort by:</label>
+				<select id="sort-select" bind:value={sortBy} class="sort-dropdown">
+					<option value="value-desc">💰 Price (High to Low)</option>
+					<option value="value-asc">💰 Price (Low to High)</option>
+					<option value="name-asc">🔤 Name (A to Z)</option>
+					<option value="name-desc">🔤 Name (Z to A)</option>
+					<option value="type-asc">🎴 Type (A to Z)</option>
+					<option value="type-desc">🎴 Type (Z to A)</option>
+					<option value="quantity-desc">📊 Quantity (Most First)</option>
+					<option value="quantity-asc">📊 Quantity (Least First)</option>
+				</select>
 			</div>
 		{/if}
 	</div>
@@ -258,7 +309,7 @@
 		<p class="empty-collection">Your collection is empty. Search for cards and add them to get started!</p>
 	{:else}
 		<div class="collection-grid">
-			{#each collection as card}
+			{#each getSortedCollection() as card}
 				<div class="collection-card">
 					<button
 						class="image-button collection-image-button"
@@ -802,7 +853,7 @@
 	.collection-header {
 		display: flex;
 		justify-content: space-between;
-		align-items: center;
+		align-items: flex-start;
 		margin-bottom: 3rem;
 		padding: var(--spacing-2xl) var(--spacing-4xl);
 		background: linear-gradient(135deg, var(--bg-glass-primary) 0%, var(--bg-glass-secondary) 100%);
@@ -810,6 +861,57 @@
 		border-radius: var(--radius-xl);
 		backdrop-filter: var(--backdrop-blur-lg);
 		box-shadow: var(--shadow-collection);
+		gap: var(--spacing-2xl);
+	}
+
+	.collection-info {
+		flex: 1;
+	}
+
+	.collection-controls {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: var(--spacing-sm);
+	}
+
+	.sort-label {
+		font-family: var(--font-primary);
+		font-size: 0.9rem;
+		font-weight: var(--font-weight-medium);
+		color: var(--color-text-secondary);
+		margin: 0;
+	}
+
+	.sort-dropdown {
+		background: linear-gradient(135deg, var(--bg-glass-tertiary) 0%, var(--bg-glass-secondary) 100%);
+		border: 2px solid var(--border-glass-secondary);
+		border-radius: var(--radius-medium);
+		color: var(--color-text-primary);
+		font-family: var(--font-secondary);
+		font-size: 0.9rem;
+		padding: var(--spacing-sm) var(--spacing-md);
+		cursor: pointer;
+		transition: var(--transition-fast);
+		backdrop-filter: var(--backdrop-blur-sm);
+		min-width: 200px;
+	}
+
+	.sort-dropdown:focus {
+		outline: none;
+		border-color: var(--color-primary-gold);
+		box-shadow: 0 0 15px rgba(201, 176, 55, 0.3);
+	}
+
+	.sort-dropdown:hover {
+		border-color: var(--color-primary-gold);
+		background: var(--bg-glass-quaternary);
+	}
+
+	.sort-dropdown option {
+		background: var(--color-bg-dark-secondary);
+		color: var(--color-text-primary);
+		padding: var(--spacing-sm);
 	}
 	
 	.collection-header h2 {
@@ -1021,6 +1123,15 @@
 			flex-direction: column;
 			gap: var(--spacing-lg);
 			text-align: center;
+			align-items: center;
+		}
+
+		.collection-controls {
+			align-items: center;
+		}
+
+		.sort-dropdown {
+			min-width: 250px;
 		}
 		
 		.search-container {
