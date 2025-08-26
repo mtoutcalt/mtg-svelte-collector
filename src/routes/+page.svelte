@@ -29,6 +29,7 @@
 	let analyticsData: any = null;
 	let analyticsLoading: boolean = false;
 	let updatingPrices: boolean = false;
+	let colorFilter: string | null = null;
 
 	async function loadCollection(): Promise<void> {
 		collection = await loadCollectionFromStorage();
@@ -169,6 +170,18 @@
 		return collection.length;
 	}
 
+	function getFilteredCollection(): ScryfallCard[] {
+		return colorFilter ? collection.filter(matchesColorFilter) : collection;
+	}
+
+	function getFilteredCardCount(): number {
+		return getFilteredCollection().reduce((total, card) => total + (card.quantity || 1), 0);
+	}
+
+	function getFilteredUniqueCardCount(): number {
+		return getFilteredCollection().length;
+	}
+
 	async function searchCard(): Promise<void> {
 		if (!cardName.trim()) return;
 		
@@ -264,36 +277,52 @@
 		return order.indexOf(category);
 	}
 
+	function setColorFilter(filter: string | null): void {
+		colorFilter = filter;
+	}
+
+	function clearColorFilter(): void {
+		colorFilter = null;
+	}
+
+	function matchesColorFilter(card: ScryfallCard): boolean {
+		if (!colorFilter) return true;
+		
+		const cardCategory = getCardColorCategory(card);
+		return cardCategory === colorFilter;
+	}
+
 	function getSortedCollection(): ScryfallCard[] {
-		const sorted = [...collection];
+		// First apply color filter, then sort
+		const filtered = colorFilter ? collection.filter(matchesColorFilter) : [...collection];
 		
 		switch (sortBy) {
 			case 'value-desc':
-				return sorted.sort((a, b) => {
+				return filtered.sort((a, b) => {
 					const aValue = parseFloat(a.prices?.usd || '0');
 					const bValue = parseFloat(b.prices?.usd || '0');
 					return bValue - aValue;
 				});
 			case 'value-asc':
-				return sorted.sort((a, b) => {
+				return filtered.sort((a, b) => {
 					const aValue = parseFloat(a.prices?.usd || '0');
 					const bValue = parseFloat(b.prices?.usd || '0');
 					return aValue - bValue;
 				});
 			case 'name-asc':
-				return sorted.sort((a, b) => a.name.localeCompare(b.name));
+				return filtered.sort((a, b) => a.name.localeCompare(b.name));
 			case 'name-desc':
-				return sorted.sort((a, b) => b.name.localeCompare(a.name));
+				return filtered.sort((a, b) => b.name.localeCompare(a.name));
 			case 'type-asc':
-				return sorted.sort((a, b) => a.type_line.localeCompare(b.type_line));
+				return filtered.sort((a, b) => a.type_line.localeCompare(b.type_line));
 			case 'type-desc':
-				return sorted.sort((a, b) => b.type_line.localeCompare(a.type_line));
+				return filtered.sort((a, b) => b.type_line.localeCompare(a.type_line));
 			case 'quantity-desc':
-				return sorted.sort((a, b) => (b.quantity || 1) - (a.quantity || 1));
+				return filtered.sort((a, b) => (b.quantity || 1) - (a.quantity || 1));
 			case 'quantity-asc':
-				return sorted.sort((a, b) => (a.quantity || 1) - (b.quantity || 1));
+				return filtered.sort((a, b) => (a.quantity || 1) - (b.quantity || 1));
 			case 'color-wubrg':
-				return sorted.sort((a, b) => {
+				return filtered.sort((a, b) => {
 					const aCategory = getCardColorCategory(a);
 					const bCategory = getCardColorCategory(b);
 					const aOrder = getColorSortOrder(aCategory);
@@ -307,7 +336,7 @@
 					return a.name.localeCompare(b.name);
 				});
 			default:
-				return sorted;
+				return filtered;
 		}
 	}
 </script>
@@ -411,27 +440,97 @@
 <div class="collection-view">
 	<div class="collection-header">
 		<div class="collection-info">
-			<h2>My Collection ({getCollectionCount()} cards, {getUniqueCardCount()} unique)</h2>
+			<h2>
+				My Collection 
+				{#if colorFilter}
+					({getFilteredCardCount()} cards, {getFilteredUniqueCardCount()} unique - {colorFilter} filter)
+				{:else}
+					({getCollectionCount()} cards, {getUniqueCardCount()} unique)
+				{/if}
+			</h2>
 			{#if collection.length > 0}
 				<div class="collection-value">
-					<strong>Total Worth: {formatCurrency(calculateCollectionValue(collection))}</strong>
+					<strong>Total Worth: {formatCurrency(calculateCollectionValue(getFilteredCollection()))}</strong>
 				</div>
 			{/if}
 		</div>
 		{#if collection.length > 0}
 			<div class="collection-controls">
-				<label for="sort-select" class="sort-label">Sort by:</label>
-				<select id="sort-select" bind:value={sortBy} class="sort-dropdown">
-					<option value="value-desc">💰 Price (High to Low)</option>
-					<option value="value-asc">💰 Price (Low to High)</option>
-					<option value="name-asc">🔤 Name (A to Z)</option>
-					<option value="name-desc">🔤 Name (Z to A)</option>
-					<option value="type-asc">🎴 Type (A to Z)</option>
-					<option value="type-desc">🎴 Type (Z to A)</option>
-					<option value="quantity-desc">📊 Quantity (Most First)</option>
-					<option value="quantity-asc">📊 Quantity (Least First)</option>
-					<option value="color-wubrg">🌈 Color (WUBRG Order)</option>
-				</select>
+				<div class="filter-section">
+					<div class="filter-label">Filter by color:</div>
+					<div class="color-filters">
+						<button 
+							class="color-filter-btn {colorFilter === null ? 'active' : ''}" 
+							on:click={clearColorFilter}
+							title="Show all colors"
+						>
+							All
+						</button>
+						<button 
+							class="color-filter-btn white {colorFilter === 'White' ? 'active' : ''}" 
+							on:click={() => setColorFilter('White')}
+							title="White cards only"
+						>
+							⚪
+						</button>
+						<button 
+							class="color-filter-btn blue {colorFilter === 'Blue' ? 'active' : ''}" 
+							on:click={() => setColorFilter('Blue')}
+							title="Blue cards only"
+						>
+							🔵
+						</button>
+						<button 
+							class="color-filter-btn black {colorFilter === 'Black' ? 'active' : ''}" 
+							on:click={() => setColorFilter('Black')}
+							title="Black cards only"
+						>
+							⚫
+						</button>
+						<button 
+							class="color-filter-btn red {colorFilter === 'Red' ? 'active' : ''}" 
+							on:click={() => setColorFilter('Red')}
+							title="Red cards only"
+						>
+							🔴
+						</button>
+						<button 
+							class="color-filter-btn green {colorFilter === 'Green' ? 'active' : ''}" 
+							on:click={() => setColorFilter('Green')}
+							title="Green cards only"
+						>
+							🟢
+						</button>
+						<button 
+							class="color-filter-btn multicolor {colorFilter === 'Multicolor' ? 'active' : ''}" 
+							on:click={() => setColorFilter('Multicolor')}
+							title="Multicolor cards only"
+						>
+							🌈
+						</button>
+						<button 
+							class="color-filter-btn colorless {colorFilter === 'Colorless' ? 'active' : ''}" 
+							on:click={() => setColorFilter('Colorless')}
+							title="Colorless cards only"
+						>
+							◯
+						</button>
+					</div>
+				</div>
+				<div class="sort-section">
+					<label for="sort-select" class="sort-label">Sort by:</label>
+					<select id="sort-select" bind:value={sortBy} class="sort-dropdown">
+						<option value="value-desc">💰 Price (High to Low)</option>
+						<option value="value-asc">💰 Price (Low to High)</option>
+						<option value="name-asc">🔤 Name (A to Z)</option>
+						<option value="name-desc">🔤 Name (Z to A)</option>
+						<option value="type-asc">🎴 Type (A to Z)</option>
+						<option value="type-desc">🎴 Type (Z to A)</option>
+						<option value="quantity-desc">📊 Quantity (Most First)</option>
+						<option value="quantity-asc">📊 Quantity (Least First)</option>
+						<option value="color-wubrg">🌈 Color (WUBRG Order)</option>
+					</select>
+				</div>
 			</div>
 		{/if}
 	</div>
@@ -1406,7 +1505,72 @@
 		display: flex;
 		flex-direction: column;
 		align-items: flex-end;
+		gap: var(--spacing-lg);
+	}
+
+	.filter-section {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
 		gap: var(--spacing-sm);
+	}
+
+	.sort-section {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: var(--spacing-sm);
+	}
+
+	.filter-label {
+		font-family: var(--font-primary);
+		font-size: 0.9rem;
+		font-weight: var(--font-weight-medium);
+		color: var(--color-text-secondary);
+		margin: 0;
+	}
+
+	.color-filters {
+		display: flex;
+		gap: var(--spacing-xs);
+		align-items: center;
+	}
+
+	.color-filter-btn {
+		background: linear-gradient(135deg, var(--bg-glass-tertiary) 0%, var(--bg-glass-secondary) 100%);
+		border: 2px solid var(--border-glass-secondary);
+		border-radius: var(--radius-medium);
+		color: var(--color-text-primary);
+		font-size: 1.2rem;
+		padding: var(--spacing-sm);
+		cursor: pointer;
+		transition: var(--transition-fast);
+		backdrop-filter: var(--backdrop-blur-sm);
+		min-width: 40px;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-family: var(--font-secondary);
+	}
+
+	.color-filter-btn:hover {
+		border-color: var(--color-primary-gold);
+		background: var(--bg-glass-quaternary);
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-medium) rgba(201, 176, 55, 0.3);
+	}
+
+	.color-filter-btn.active {
+		border-color: var(--color-primary-gold);
+		background: linear-gradient(135deg, var(--color-primary-gold) 0%, var(--color-primary-gold-light) 100%);
+		color: var(--color-bg-dark-primary);
+		box-shadow: var(--shadow-medium) rgba(201, 176, 55, 0.6);
+		transform: translateY(-1px);
+	}
+
+	.color-filter-btn.active:hover {
+		background: linear-gradient(135deg, var(--color-primary-gold-variant) 0%, #f7ea95 100%);
 	}
 
 	.sort-label {
@@ -1664,8 +1828,18 @@
 			align-items: center;
 		}
 
+		.filter-section,
+		.sort-section {
+			align-items: center;
+		}
+
 		.sort-dropdown {
 			min-width: 250px;
+		}
+
+		.color-filters {
+			flex-wrap: wrap;
+			justify-content: center;
 		}
 		
 		.search-container {
