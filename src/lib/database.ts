@@ -76,6 +76,14 @@ function initializeDatabase(database: Database.Database): void {
 			database.exec('ALTER TABLE cards ADD COLUMN price_usd_12mo_ago TEXT');
 			database.exec('ALTER TABLE cards ADD COLUMN price_last_updated DATETIME');
 		}
+
+		// Check if color columns exist, if not add them for color-based sorting
+		const hasColorColumns = columnInfo.some(col => col.name === 'colors');
+		
+		if (!hasColorColumns) {
+			database.exec('ALTER TABLE cards ADD COLUMN colors TEXT');
+			database.exec('ALTER TABLE cards ADD COLUMN color_identity TEXT');
+		}
 		
 		createIndexes.forEach(indexQuery => database.exec(indexQuery));
 		
@@ -114,6 +122,8 @@ export interface CardRow {
 	mana_cost: string | null;
 	type_line: string;
 	oracle_text: string | null;
+	colors: string | null;
+	color_identity: string | null;
 	image_normal: string | null;
 	image_small: string | null;
 	image_large: string | null;
@@ -137,6 +147,8 @@ export function cardRowToScryfallCard(row: CardRow): ScryfallCard {
 		mana_cost: row.mana_cost || undefined,
 		type_line: row.type_line,
 		oracle_text: row.oracle_text || undefined,
+		colors: row.colors ? JSON.parse(row.colors) : undefined,
+		color_identity: row.color_identity ? JSON.parse(row.color_identity) : undefined,
 		image_uris: row.image_normal ? {
 			normal: row.image_normal,
 			small: row.image_small || row.image_normal,
@@ -165,6 +177,8 @@ export function scryfallCardToCardRow(card: ScryfallCard): Omit<CardRow, 'create
 		mana_cost: card.mana_cost || null,
 		type_line: card.type_line,
 		oracle_text: card.oracle_text || null,
+		colors: card.colors ? JSON.stringify(card.colors) : null,
+		color_identity: card.color_identity ? JSON.stringify(card.color_identity) : null,
 		image_normal: card.image_uris?.normal || null,
 		image_small: card.image_uris?.small || null,
 		image_large: card.image_uris?.large || null,

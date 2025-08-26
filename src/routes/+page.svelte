@@ -239,6 +239,30 @@
 		modalImageName = '';
 	}
 
+	function getCardColorCategory(card: ScryfallCard): string {
+		const colors = card.colors || [];
+		
+		if (colors.length === 0) {
+			return 'Colorless';
+		} else if (colors.length === 1) {
+			switch (colors[0]) {
+				case 'W': return 'White';
+				case 'U': return 'Blue';
+				case 'B': return 'Black';
+				case 'R': return 'Red';
+				case 'G': return 'Green';
+				default: return 'Other';
+			}
+		} else {
+			return 'Multicolor';
+		}
+	}
+
+	function getColorSortOrder(category: string): number {
+		const order = ['White', 'Blue', 'Black', 'Red', 'Green', 'Multicolor', 'Colorless'];
+		return order.indexOf(category);
+	}
+
 	function getSortedCollection(): ScryfallCard[] {
 		const sorted = [...collection];
 		
@@ -267,6 +291,20 @@
 				return sorted.sort((a, b) => (b.quantity || 1) - (a.quantity || 1));
 			case 'quantity-asc':
 				return sorted.sort((a, b) => (a.quantity || 1) - (b.quantity || 1));
+			case 'color-wubrg':
+				return sorted.sort((a, b) => {
+					const aCategory = getCardColorCategory(a);
+					const bCategory = getCardColorCategory(b);
+					const aOrder = getColorSortOrder(aCategory);
+					const bOrder = getColorSortOrder(bCategory);
+					
+					if (aOrder !== bOrder) {
+						return aOrder - bOrder;
+					}
+					
+					// Same color, sort by name
+					return a.name.localeCompare(b.name);
+				});
 			default:
 				return sorted;
 		}
@@ -391,6 +429,7 @@
 					<option value="type-desc">🎴 Type (Z to A)</option>
 					<option value="quantity-desc">📊 Quantity (Most First)</option>
 					<option value="quantity-asc">📊 Quantity (Least First)</option>
+					<option value="color-wubrg">🌈 Color (WUBRG Order)</option>
 				</select>
 			</div>
 		{/if}
