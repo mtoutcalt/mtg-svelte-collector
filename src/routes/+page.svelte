@@ -16,6 +16,8 @@
 
 	let cardName: string = '';
 	let cardData: CardData = null;
+	let searchResults: ScryfallCard[] = [];
+	let showMultipleResults: boolean = false;
 	let loading: boolean = false;
 	let addedToCollection: boolean = false;
 	let addMessage: string = '';
@@ -185,42 +187,39 @@
 	async function searchCard(): Promise<void> {
 		if (!cardName.trim()) return;
 		
-		// Reset added state when searching
+		// Reset state when searching
 		addedToCollection = false;
+		cardData = null;
+		searchResults = [];
+		showMultipleResults = false;
 		loading = true;
+		
 		try {
-			const response = await fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`);
-			if (response.ok) {
-				cardData = await response.json() as ScryfallCard;
-			} else if (response.status === 404) {
-				// Try fuzzy search as fallback - search each word
-				const words: string[] = cardName.split(' ').filter(word => word.length > 2);
-				let found: boolean = false;
-				
-				for (const word of words) {
-					try {
-						const fuzzyResponse = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(word)}`);
-						if (fuzzyResponse.ok) {
-							const fuzzyData = await fuzzyResponse.json() as ScryfallSearchResponse;
-							if (fuzzyData.data && fuzzyData.data.length > 0) {
-								// Find best match by looking for cards that contain the original search terms
-								const bestMatch: ScryfallCard = fuzzyData.data.find((card: ScryfallCard) => 
-									cardName.toLowerCase().split(' ').some((searchWord: string) => 
-										card.name.toLowerCase().includes(searchWord.substring(0, 4))
-									)
-								) || fuzzyData.data[0];
-								
-								cardData = { ...bestMatch, fuzzyMatch: true };
-								found = true;
-								break;
-							}
-						}
-					} catch (e) {
-						continue;
+			// First try exact search
+			const exactResponse = await fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`);
+			if (exactResponse.ok) {
+				cardData = await exactResponse.json() as ScryfallCard;
+				loading = false;
+				return;
+			}
+			
+			// If exact search fails, try fuzzy search for multiple results
+			const fuzzyResponse = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(cardName)}&order=name`);
+			if (fuzzyResponse.ok) {
+				const fuzzyData = await fuzzyResponse.json() as ScryfallSearchResponse;
+				if (fuzzyData.data && fuzzyData.data.length > 0) {
+					// Get up to 8 results
+					const results = fuzzyData.data.slice(0, 8).map(card => ({ ...card, fuzzyMatch: true }));
+					
+					if (results.length === 1) {
+						// Only one result found, show it as single card
+						cardData = results[0];
+					} else {
+						// Multiple results found, show them as options
+						searchResults = results;
+						showMultipleResults = true;
 					}
-				}
-				
-				if (!found) {
+				} else {
 					cardData = { 
 						error: `No cards found matching "${cardName}". Try a different search term.`,
 						notFound: true 
@@ -228,7 +227,7 @@
 				}
 			} else {
 				cardData = { 
-					error: `Server error (${response.status}). Please try again later.` 
+					error: `Server error (${fuzzyResponse.status}). Please try again later.` 
 				};
 			}
 		} catch (error) {
@@ -239,6 +238,12 @@
 			}
 		}
 		loading = false;
+	}
+
+	function selectCard(card: ScryfallCard): void {
+		cardData = card;
+		showMultipleResults = false;
+		searchResults = [];
 	}
 
 	function openImageModal(imageSrc: string, imageName: string): void {
@@ -433,6 +438,33 @@
 	</div>
 {:else if isError(cardData)}
 	<p class="error">{cardData.error}</p>
+{/if}
+
+{#if showMultipleResults && searchResults.length > 0}
+	<div class="multiple-results">
+		<div class="results-header">
+			<h2>Found {searchResults.length} results for "{cardName}"</h2>
+			<p>Click on a card to view details and add to collection:</p>
+		</div>
+		<div class="results-grid">
+			{#each searchResults as card}
+				<div class="result-card" on:click={() => selectCard(card)} on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && selectCard(card)} role="button" tabindex="0">
+					<div class="result-image">
+						<img 
+							src={card.image_uris?.small || card.image_uris?.normal} 
+							alt={card.name} 
+							class="result-card-image"
+						/>
+					</div>
+					<div class="result-info">
+						<h3>{card.name}</h3>
+						<p class="result-type">{card.type_line}</p>
+						<p class="result-price">{card.prices?.usd ? `$${card.prices.usd}` : 'Price N/A'}</p>
+					</div>
+				</div>
+			{/each}
+		</div>
+	</div>
 {/if}
 
 {:else if viewingCollection}
@@ -1439,6 +1471,137 @@
 		margin-top: 0.5rem;
 		font-weight: var(--font-weight-medium);
 	}
+
+	/* Multiple Results Styles */
+	.multiple-results {
+		max-width: 1200px;
+		margin: 2rem auto;
+		padding: var(--spacing-3xl);
+		background: linear-gradient(135deg, var(--bg-glass-primary) 0%, var(--bg-glass-secondary) 100%);
+		border: 1px solid var(--border-glass-primary);
+		border-radius: var(--radius-xxl);
+		backdrop-filter: var(--backdrop-blur-lg);
+		box-shadow: var(--shadow-card);
+	}
+
+	.results-header {
+		text-align: center;
+		margin-bottom: 2rem;
+	}
+
+	.results-header h2 {
+		font-family: var(--font-primary);
+		font-size: 1.8rem;
+		font-weight: var(--font-weight-medium);
+		color: var(--color-primary-gold);
+		margin: 0 0 1rem 0;
+		text-shadow: 0 2px 10px rgba(201, 176, 55, 0.3);
+	}
+
+	.results-header p {
+		color: var(--color-text-secondary);
+		font-size: 1rem;
+		margin: 0;
+		font-style: italic;
+	}
+
+	.results-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+		gap: var(--spacing-xl);
+		margin-top: 2rem;
+	}
+
+	.result-card {
+		background: linear-gradient(135deg, var(--bg-glass-tertiary) 0%, var(--bg-glass-secondary) 100%);
+		border: 1px solid var(--border-glass-secondary);
+		border-radius: var(--radius-large);
+		padding: var(--spacing-lg);
+		cursor: pointer;
+		transition: var(--transition-smooth);
+		backdrop-filter: var(--backdrop-blur-sm);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.result-card::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 2px;
+		background: linear-gradient(90deg, transparent, rgba(201, 176, 55, 0.5), transparent);
+		transform: scaleX(0);
+		transition: transform 0.3s ease;
+	}
+
+	.result-card:hover {
+		transform: translateY(-5px);
+		box-shadow: var(--shadow-large) rgba(0, 0, 0, 0.4);
+		border-color: var(--color-primary-gold);
+		background: linear-gradient(135deg, var(--bg-glass-quaternary) 0%, var(--bg-glass-tertiary) 100%);
+	}
+
+	.result-card:hover::before {
+		transform: scaleX(1);
+	}
+
+	.result-card:focus {
+		outline: 2px solid var(--color-primary-gold);
+		outline-offset: 2px;
+	}
+
+	.result-image {
+		width: 100%;
+		margin-bottom: var(--spacing-md);
+		display: flex;
+		justify-content: center;
+	}
+
+	.result-card-image {
+		width: 120px;
+		height: auto;
+		border-radius: var(--radius-medium);
+		box-shadow: var(--shadow-medium) rgba(0, 0, 0, 0.3);
+		transition: transform 0.3s ease;
+	}
+
+	.result-card:hover .result-card-image {
+		transform: scale(1.05);
+	}
+
+	.result-info {
+		width: 100%;
+	}
+
+	.result-info h3 {
+		font-family: var(--font-primary);
+		font-size: 1.1rem;
+		font-weight: var(--font-weight-medium);
+		color: var(--color-primary-gold);
+		margin: 0 0 var(--spacing-sm) 0;
+		text-shadow: 0 1px 5px rgba(201, 176, 55, 0.3);
+	}
+
+	.result-type {
+		color: var(--color-text-secondary);
+		font-size: 0.9rem;
+		margin: 0 0 var(--spacing-sm) 0;
+		font-style: italic;
+	}
+
+	.result-price {
+		color: var(--color-green-primary);
+		font-family: var(--font-primary);
+		font-weight: var(--font-weight-medium);
+		font-size: 1rem;
+		margin: 0;
+	}
 	
 	
 	.skeleton {
@@ -1845,6 +2008,19 @@
 		.search-container {
 			flex-direction: column;
 			gap: var(--spacing-lg);
+		}
+
+		.results-grid {
+			grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+			gap: var(--spacing-lg);
+		}
+
+		.result-card-image {
+			width: 100px;
+		}
+
+		.results-header h2 {
+			font-size: 1.4rem;
 		}
 	}
 
