@@ -142,8 +142,9 @@
 		}
 		
 		const now = new Date();
-		const daysSinceUpdate = Math.floor((now.getTime() - mostRecentUpdate.getTime()) / (1000 * 60 * 60 * 24));
-		const hoursSinceUpdate = Math.floor((now.getTime() - mostRecentUpdate.getTime()) / (1000 * 60 * 60));
+		const mostRecent = mostRecentUpdate as Date; // Type assertion for clarity
+		const daysSinceUpdate = Math.floor((now.getTime() - mostRecent.getTime()) / (1000 * 60 * 60 * 24));
+		const hoursSinceUpdate = Math.floor((now.getTime() - mostRecent.getTime()) / (1000 * 60 * 60));
 		
 		let lastUpdateText = '';
 		if (daysSinceUpdate > 0) {
@@ -617,6 +618,8 @@
 
 <!-- Image Modal -->
 {#if showImageModal}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div class="modal-overlay" on:click={closeImageModal} on:keydown={(e) => (e.key === 'Escape' || e.key === 'Enter') && closeImageModal()} role="button" tabindex="0" aria-label="Close modal">
 		<div class="modal-content" on:click|stopPropagation>
 			<button class="modal-close" on:click={closeImageModal} title="Close">&times;</button>
