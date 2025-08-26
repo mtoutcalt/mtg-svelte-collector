@@ -20,11 +20,15 @@
 	let addedToCollection: boolean = false;
 	let addMessage: string = '';
 	let viewingCollection: boolean = false;
+	let viewingAnalytics: boolean = false;
 	let collection: ScryfallCard[] = [];
 	let showImageModal: boolean = false;
 	let modalImageSrc: string = '';
 	let modalImageName: string = '';
 	let sortBy: string = 'value-desc';
+	let analyticsData: any = null;
+	let analyticsLoading: boolean = false;
+	let updatingPrices: boolean = false;
 
 	async function loadCollection(): Promise<void> {
 		collection = await loadCollectionFromStorage();
@@ -67,9 +71,93 @@
 
 	async function toggleCollectionView(): Promise<void> {
 		viewingCollection = !viewingCollection;
+		viewingAnalytics = false;
 		if (viewingCollection) {
 			await loadCollection();
 		}
+	}
+
+	async function toggleAnalyticsView(): Promise<void> {
+		viewingAnalytics = !viewingAnalytics;
+		viewingCollection = false;
+		if (viewingAnalytics) {
+			await loadAnalytics();
+		}
+	}
+
+	async function loadAnalytics(): Promise<void> {
+		analyticsLoading = true;
+		try {
+			const response = await fetch('/api/analytics');
+			if (response.ok) {
+				analyticsData = await response.json();
+			} else {
+				console.error('Failed to load analytics:', response.statusText);
+			}
+		} catch (error) {
+			console.error('Error loading analytics:', error);
+		}
+		analyticsLoading = false;
+	}
+
+	async function updatePrices(): Promise<void> {
+		updatingPrices = true;
+		try {
+			const response = await fetch('/api/prices', { method: 'PUT' });
+			if (response.ok) {
+				const result = await response.json();
+				console.log('Prices updated:', result);
+				// Reload analytics after updating prices
+				if (viewingAnalytics) {
+					await loadAnalytics();
+				}
+			} else {
+				console.error('Failed to update prices:', response.statusText);
+			}
+		} catch (error) {
+			console.error('Error updating prices:', error);
+		}
+		updatingPrices = false;
+	}
+
+	function getLastUpdateInfo(): { lastUpdate: string; canUpdate: boolean } {
+		if (!analyticsData || !collection.length) {
+			return { lastUpdate: 'Never', canUpdate: true };
+		}
+		
+		// Find the most recent update time across all cards
+		let mostRecentUpdate: Date | null = null;
+		
+		collection.forEach(card => {
+			if (card.priceHistory?.lastUpdated) {
+				const updateTime = new Date(card.priceHistory.lastUpdated);
+				if (!mostRecentUpdate || updateTime > mostRecentUpdate) {
+					mostRecentUpdate = updateTime;
+				}
+			}
+		});
+		
+		if (!mostRecentUpdate) {
+			return { lastUpdate: 'Never', canUpdate: true };
+		}
+		
+		const now = new Date();
+		const daysSinceUpdate = Math.floor((now.getTime() - mostRecentUpdate.getTime()) / (1000 * 60 * 60 * 24));
+		const hoursSinceUpdate = Math.floor((now.getTime() - mostRecentUpdate.getTime()) / (1000 * 60 * 60));
+		
+		let lastUpdateText = '';
+		if (daysSinceUpdate > 0) {
+			lastUpdateText = `${daysSinceUpdate} day${daysSinceUpdate > 1 ? 's' : ''} ago`;
+		} else if (hoursSinceUpdate > 0) {
+			lastUpdateText = `${hoursSinceUpdate} hour${hoursSinceUpdate > 1 ? 's' : ''} ago`;
+		} else {
+			lastUpdateText = 'Less than an hour ago';
+		}
+		
+		// Allow updates if it's been more than 1 day since last update
+		const canUpdate = daysSinceUpdate >= 1;
+		
+		return { lastUpdate: lastUpdateText, canUpdate };
 	}
 
 	function getCollectionCount(): number {
@@ -191,9 +279,12 @@
 	<button class="collection-button" on:click={toggleCollectionView}>
 		{viewingCollection ? '← Back to Search' : `📚 View Collection (${getCollectionCount()} cards, ${getUniqueCardCount()} unique)`}
 	</button>
+	<button class="analytics-button" on:click={toggleAnalyticsView}>
+		{viewingAnalytics ? '← Back to Search' : '📊 Analytics'}
+	</button>
 </div>
 
-{#if !viewingCollection}
+{#if !viewingCollection && !viewingAnalytics}
 <div class="search-container">
 	<input 
 		bind:value={cardName} 
@@ -276,7 +367,7 @@
 	<p class="error">{cardData.error}</p>
 {/if}
 
-{:else}
+{:else if viewingCollection}
 <!-- Collection View -->
 <div class="collection-view">
 	<div class="collection-header">
@@ -359,6 +450,127 @@
 					</div>
 				</div>
 			{/each}
+		</div>
+	{/if}
+</div>
+
+{:else if viewingAnalytics}
+<!-- Analytics View -->
+<div class="analytics-view">
+	<div class="analytics-header">
+		<div class="analytics-title-section">
+			<h2>📊 Portfolio Analytics</h2>
+			{#if analyticsData}
+				{@const updateInfo = getLastUpdateInfo()}
+				<div class="last-update-info">
+					<span class="update-text">Last updated: {updateInfo.lastUpdate}</span>
+					{#if !updateInfo.canUpdate}
+						<span class="update-hint">💡 Updates limited to once per day</span>
+					{/if}
+				</div>
+			{/if}
+		</div>
+		<button class="update-prices-button" on:click={updatePrices} disabled={updatingPrices || (analyticsData && !getLastUpdateInfo().canUpdate)}>
+			{updatingPrices ? '⏳ Updating...' : '🔄 Update Prices'}
+		</button>
+	</div>
+
+	{#if analyticsLoading}
+		<div class="analytics-loading">
+			<p>Loading analytics...</p>
+		</div>
+	{:else if analyticsData}
+		<div class="analytics-content">
+			<!-- Portfolio Summary -->
+			<div class="portfolio-summary">
+				<h3>Portfolio Overview</h3>
+				<div class="summary-cards">
+					<div class="summary-card">
+						<div class="card-value">${analyticsData.portfolioSummary.totalValue.toFixed(2)}</div>
+						<div class="card-label">Total Value</div>
+					</div>
+					<div class="summary-card">
+						<div class="card-value">{analyticsData.portfolioSummary.totalCards}</div>
+						<div class="card-label">Total Cards</div>
+					</div>
+					<div class="summary-card">
+						<div class="card-value">{analyticsData.portfolioSummary.uniqueCards}</div>
+						<div class="card-label">Unique Cards</div>
+					</div>
+				</div>
+				
+				<!-- Performance Summary -->
+				{#if analyticsData.portfolioSummary.sixMonthGain !== null || analyticsData.portfolioSummary.twelveMonthGain !== null}
+					<div class="performance-summary">
+						{#if analyticsData.portfolioSummary.sixMonthGain !== null}
+							<div class="performance-card {analyticsData.portfolioSummary.sixMonthGain >= 0 ? 'positive' : 'negative'}">
+								<div class="performance-value">
+									{analyticsData.portfolioSummary.sixMonthGain >= 0 ? '+' : ''}${analyticsData.portfolioSummary.sixMonthGain.toFixed(2)}
+								</div>
+								<div class="performance-percentage">
+									({analyticsData.portfolioSummary.sixMonthChange >= 0 ? '+' : ''}{analyticsData.portfolioSummary.sixMonthChange.toFixed(1)}%)
+								</div>
+								<div class="performance-label">6 Month Change</div>
+							</div>
+						{/if}
+						
+						{#if analyticsData.portfolioSummary.twelveMonthGain !== null}
+							<div class="performance-card {analyticsData.portfolioSummary.twelveMonthGain >= 0 ? 'positive' : 'negative'}">
+								<div class="performance-value">
+									{analyticsData.portfolioSummary.twelveMonthGain >= 0 ? '+' : ''}${analyticsData.portfolioSummary.twelveMonthGain.toFixed(2)}
+								</div>
+								<div class="performance-percentage">
+									({analyticsData.portfolioSummary.twelveMonthChange >= 0 ? '+' : ''}{analyticsData.portfolioSummary.twelveMonthChange.toFixed(1)}%)
+								</div>
+								<div class="performance-label">12 Month Change</div>
+							</div>
+						{/if}
+					</div>
+				{/if}
+			</div>
+
+			<!-- Top Performers -->
+			{#if analyticsData.topPerformers.sixMonth.length > 0}
+				<div class="performers-section">
+					<h3>🚀 Top Performers (6 Months)</h3>
+					<div class="performers-table">
+						{#each analyticsData.topPerformers.sixMonth as card}
+							<div class="performer-row positive">
+								<div class="performer-name">{card.name}</div>
+								<div class="performer-change">+{card.sixMonthChange.toFixed(1)}%</div>
+								<div class="performer-gain">${card.sixMonthGain.toFixed(2)}</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+
+			<!-- Bottom Performers -->
+			{#if analyticsData.bottomPerformers.sixMonth.length > 0}
+				<div class="performers-section">
+					<h3>📉 Worst Performers (6 Months)</h3>
+					<div class="performers-table">
+						{#each analyticsData.bottomPerformers.sixMonth as card}
+							<div class="performer-row negative">
+								<div class="performer-name">{card.name}</div>
+								<div class="performer-change">{card.sixMonthChange.toFixed(1)}%</div>
+								<div class="performer-gain">${card.sixMonthGain.toFixed(2)}</div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
+
+			{#if analyticsData.topPerformers.sixMonth.length === 0 && analyticsData.topPerformers.twelveMonth.length === 0}
+				<div class="no-data">
+					<p>📈 No performance data available yet.</p>
+					<p>Update prices monthly to start tracking your collection's performance over time!</p>
+				</div>
+			{/if}
+		</div>
+	{:else}
+		<div class="no-analytics">
+			<p>No analytics data available. Click "Update Prices" to get started!</p>
 		</div>
 	{/if}
 </div>
@@ -530,6 +742,7 @@
 	.top-nav {
 		display: flex;
 		justify-content: center;
+		gap: var(--spacing-xl);
 		margin-bottom: 3rem;
 	}
 	
@@ -568,6 +781,285 @@
 		transform: translateY(-3px);
 		box-shadow: var(--shadow-2xl) rgba(106, 76, 147, 0.6);
 		background: linear-gradient(135deg, var(--color-purple-light) 0%, var(--color-purple-lighter) 100%);
+	}
+	
+	.analytics-button {
+		background: linear-gradient(135deg, var(--color-primary-gold) 0%, var(--color-primary-gold-light) 100%);
+		color: var(--color-bg-dark-primary);
+		border: none;
+		padding: 14px 28px;
+		border-radius: var(--radius-xxl);
+		cursor: pointer;
+		font-size: 16px;
+		font-family: var(--font-primary);
+		font-weight: var(--font-weight-medium);
+		transition: var(--transition-smooth);
+		box-shadow: var(--shadow-large) rgba(201, 176, 55, 0.4);
+		position: relative;
+		overflow: hidden;
+	}
+
+	.analytics-button::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+		transition: left 0.5s;
+	}
+
+	.analytics-button:hover::before {
+		left: 100%;
+	}
+
+	.analytics-button:hover {
+		transform: translateY(-3px);
+		box-shadow: var(--shadow-2xl) rgba(201, 176, 55, 0.6);
+		background: linear-gradient(135deg, var(--color-primary-gold-variant) 0%, #f7ea95 100%);
+	}
+
+	/* Analytics View Styles */
+	.analytics-view {
+		margin-top: 2rem;
+		max-width: 1200px;
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	.analytics-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 3rem;
+		padding: var(--spacing-2xl) var(--spacing-4xl);
+		background: linear-gradient(135deg, var(--bg-glass-primary) 0%, var(--bg-glass-secondary) 100%);
+		border: 1px solid var(--border-glass-primary);
+		border-radius: var(--radius-xl);
+		backdrop-filter: var(--backdrop-blur-lg);
+		box-shadow: var(--shadow-collection);
+	}
+
+	.analytics-header h2 {
+		margin: 0;
+		font-family: var(--font-primary);
+		font-size: 2rem;
+		font-weight: var(--font-weight-medium);
+		color: var(--color-primary-gold);
+		text-shadow: 0 2px 10px rgba(201, 176, 55, 0.3);
+	}
+
+	.update-prices-button {
+		background: linear-gradient(135deg, var(--color-blue-primary) 0%, var(--color-blue-secondary) 100%);
+		color: white;
+		border: none;
+		padding: var(--spacing-md) var(--spacing-xl);
+		border-radius: var(--radius-large);
+		cursor: pointer;
+		font-size: 14px;
+		font-family: var(--font-primary);
+		font-weight: var(--font-weight-medium);
+		transition: var(--transition-smooth);
+		box-shadow: var(--shadow-medium) rgba(33, 150, 243, 0.4);
+	}
+
+	.update-prices-button:hover:not(:disabled) {
+		transform: translateY(-2px);
+		box-shadow: var(--shadow-xl) rgba(33, 150, 243, 0.6);
+	}
+
+	.update-prices-button:disabled {
+		opacity: 0.7;
+		cursor: not-allowed;
+		transform: none;
+	}
+
+	.analytics-loading,
+	.no-analytics,
+	.no-data {
+		text-align: center;
+		color: var(--color-text-muted);
+		font-size: 1.2rem;
+		margin: 4rem 0;
+		padding: 3rem;
+		background: var(--bg-glass-minimal);
+		border: 1px dashed var(--border-dashed);
+		border-radius: var(--radius-xl);
+	}
+
+	.portfolio-summary {
+		margin-bottom: 3rem;
+		padding: var(--spacing-3xl);
+		background: linear-gradient(135deg, var(--bg-glass-primary) 0%, var(--bg-glass-secondary) 100%);
+		border: 1px solid var(--border-glass-primary);
+		border-radius: var(--radius-xl);
+		backdrop-filter: var(--backdrop-blur-lg);
+		box-shadow: var(--shadow-card);
+	}
+
+	.portfolio-summary h3 {
+		margin: 0 0 2rem 0;
+		font-family: var(--font-primary);
+		font-size: 1.5rem;
+		color: var(--color-primary-gold);
+		text-align: center;
+	}
+
+	.summary-cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: var(--spacing-xl);
+		margin-bottom: 2rem;
+	}
+
+	.summary-card {
+		text-align: center;
+		padding: var(--spacing-xl);
+		background: var(--bg-glass-tertiary);
+		border: 1px solid var(--border-glass-secondary);
+		border-radius: var(--radius-large);
+		transition: var(--transition-smooth);
+	}
+
+	.summary-card:hover {
+		transform: translateY(-5px);
+		box-shadow: var(--shadow-large) rgba(0, 0, 0, 0.3);
+	}
+
+	.card-value {
+		font-size: 2rem;
+		font-weight: var(--font-weight-bold);
+		color: var(--color-primary-gold);
+		font-family: var(--font-primary);
+		margin-bottom: 0.5rem;
+	}
+
+	.card-label {
+		font-size: 0.9rem;
+		color: var(--color-text-secondary);
+		text-transform: uppercase;
+		letter-spacing: 1px;
+	}
+
+	.performance-summary {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		gap: var(--spacing-xl);
+	}
+
+	.performance-card {
+		text-align: center;
+		padding: var(--spacing-xl);
+		border-radius: var(--radius-large);
+		transition: var(--transition-smooth);
+		border: 2px solid;
+	}
+
+	.performance-card.positive {
+		background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(76, 175, 80, 0.05) 100%);
+		border-color: var(--color-green-primary);
+		color: var(--color-green-primary);
+	}
+
+	.performance-card.negative {
+		background: linear-gradient(135deg, rgba(244, 67, 54, 0.1) 0%, rgba(244, 67, 54, 0.05) 100%);
+		border-color: var(--color-red-primary);
+		color: var(--color-red-primary);
+	}
+
+	.performance-value {
+		font-size: 1.5rem;
+		font-weight: var(--font-weight-bold);
+		font-family: var(--font-primary);
+		margin-bottom: 0.5rem;
+	}
+
+	.performance-percentage {
+		font-size: 1rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.performance-label {
+		font-size: 0.9rem;
+		text-transform: uppercase;
+		letter-spacing: 1px;
+		opacity: 0.8;
+	}
+
+	.performers-section {
+		margin-bottom: 3rem;
+		padding: var(--spacing-3xl);
+		background: linear-gradient(135deg, var(--bg-glass-primary) 0%, var(--bg-glass-secondary) 100%);
+		border: 1px solid var(--border-glass-primary);
+		border-radius: var(--radius-xl);
+		backdrop-filter: var(--backdrop-blur-lg);
+		box-shadow: var(--shadow-card);
+	}
+
+	.performers-section h3 {
+		margin: 0 0 2rem 0;
+		font-family: var(--font-primary);
+		font-size: 1.3rem;
+		color: var(--color-primary-gold);
+	}
+
+	.performers-table {
+		display: flex;
+		flex-direction: column;
+		gap: var(--spacing-md);
+	}
+
+	.performer-row {
+		display: grid;
+		grid-template-columns: 2fr 1fr 1fr;
+		gap: var(--spacing-lg);
+		align-items: center;
+		padding: var(--spacing-md) var(--spacing-xl);
+		border-radius: var(--radius-medium);
+		transition: var(--transition-smooth);
+		border: 1px solid;
+	}
+
+	.performer-row.positive {
+		background: linear-gradient(135deg, rgba(76, 175, 80, 0.05) 0%, rgba(76, 175, 80, 0.02) 100%);
+		border-color: rgba(76, 175, 80, 0.3);
+	}
+
+	.performer-row.negative {
+		background: linear-gradient(135deg, rgba(244, 67, 54, 0.05) 0%, rgba(244, 67, 54, 0.02) 100%);
+		border-color: rgba(244, 67, 54, 0.3);
+	}
+
+	.performer-row:hover {
+		transform: translateX(10px);
+		box-shadow: var(--shadow-medium) rgba(0, 0, 0, 0.2);
+	}
+
+	.performer-name {
+		font-weight: var(--font-weight-medium);
+		color: var(--color-text-primary);
+	}
+
+	.performer-change {
+		font-weight: var(--font-weight-bold);
+		font-family: var(--font-primary);
+		text-align: right;
+	}
+
+	.performer-row.positive .performer-change {
+		color: var(--color-green-primary);
+	}
+
+	.performer-row.negative .performer-change {
+		color: var(--color-red-primary);
+	}
+
+	.performer-gain {
+		font-family: var(--font-primary);
+		font-weight: var(--font-weight-medium);
+		text-align: right;
+		color: var(--color-text-secondary);
 	}
 	
 	.search-container {

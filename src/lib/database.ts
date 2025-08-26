@@ -67,6 +67,15 @@ function initializeDatabase(database: Database.Database): void {
 			database.exec('ALTER TABLE cards ADD COLUMN quantity INTEGER DEFAULT 1');
 			database.exec('UPDATE cards SET quantity = 1 WHERE quantity IS NULL');
 		}
+
+		// Check if price tracking columns exist, if not add them for historical price analysis
+		const hasPriceTracking = columnInfo.some(col => col.name === 'price_usd_6mo_ago');
+		
+		if (!hasPriceTracking) {
+			database.exec('ALTER TABLE cards ADD COLUMN price_usd_6mo_ago TEXT');
+			database.exec('ALTER TABLE cards ADD COLUMN price_usd_12mo_ago TEXT');
+			database.exec('ALTER TABLE cards ADD COLUMN price_last_updated DATETIME');
+		}
 		
 		createIndexes.forEach(indexQuery => database.exec(indexQuery));
 		
@@ -114,6 +123,9 @@ export interface CardRow {
 	price_tix: string | null;
 	quantity: number;
 	fuzzy_match: number;
+	price_usd_6mo_ago: string | null;
+	price_usd_12mo_ago: string | null;
+	price_last_updated: string | null;
 	created_at: string;
 	updated_at: string;
 }
@@ -137,7 +149,12 @@ export function cardRowToScryfallCard(row: CardRow): ScryfallCard {
 			tix: row.price_tix || undefined
 		},
 		quantity: row.quantity,
-		fuzzyMatch: row.fuzzy_match === 1
+		fuzzyMatch: row.fuzzy_match === 1,
+		priceHistory: {
+			usd6moAgo: row.price_usd_6mo_ago || undefined,
+			usd12moAgo: row.price_usd_12mo_ago || undefined,
+			lastUpdated: row.price_last_updated || undefined
+		}
 	};
 }
 
@@ -156,6 +173,9 @@ export function scryfallCardToCardRow(card: ScryfallCard): Omit<CardRow, 'create
 		price_eur: card.prices?.eur || null,
 		price_tix: card.prices?.tix || null,
 		quantity: card.quantity || 1,
-		fuzzy_match: card.fuzzyMatch ? 1 : 0
+		fuzzy_match: card.fuzzyMatch ? 1 : 0,
+		price_usd_6mo_ago: card.priceHistory?.usd6moAgo || null,
+		price_usd_12mo_ago: card.priceHistory?.usd12moAgo || null,
+		price_last_updated: card.priceHistory?.lastUpdated || null
 	};
 }

@@ -17,6 +17,11 @@ export interface ScryfallCard {
 	};
 	quantity?: number;
 	fuzzyMatch?: boolean;
+	priceHistory?: {
+		usd6moAgo?: string;
+		usd12moAgo?: string;
+		lastUpdated?: string;
+	};
 }
 
 export interface ScryfallError {
