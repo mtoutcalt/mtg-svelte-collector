@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+:root {
+	/* Colors */
+	--color-primary-gold: #c9b037;
+	--color-primary-gold-light: #f4e58c;
+	--color-primary-gold-dark: #8b7328;
+	--color-primary-gold-darker: #9c7f2b;
+	--color-primary-gold-variant: #d4bd3a;
+	--color-text-primary: #e8e9ed;
+	--color-text-secondary: rgba(232, 233, 237, 0.8);
+	--color-text-muted: rgba(232, 233, 237, 0.7);
+	--color-text-placeholder: rgba(232, 233, 237, 0.6);
+	--color-bg-dark-primary: #0a0e1a;
+	--color-bg-dark-secondary: #1a1f3a;
+	--color-bg-dark-tertiary: #0f1419;
+	--color-purple-primary: #6a4c93;
+	--color-purple-secondary: #9b59b6;
+	--color-purple-light: #7c5ba6;
+	--color-purple-lighter: #a569c7;
+	--color-green-primary: #4caf50;
+	--color-green-secondary: #66bb6a;
+	--color-blue-primary: #2196F3;
+	--color-blue-secondary: #42A5F5;
+	--color-blue-info: #64b5f6;
+	--color-red-primary: #f44336;
+	--color-red-secondary: #e57373;
+	--color-red-hover: #f55a4e;
+	--color-red-variant: #ef5350;
+	--color-error: #ff6b6b;
+	
+	/* Glass morphism backgrounds */
+	--bg-glass-primary: rgba(255, 255, 255, 0.1);
+	--bg-glass-secondary: rgba(255, 255, 255, 0.05);
+	--bg-glass-tertiary: rgba(255, 255, 255, 0.08);
+	--bg-glass-quaternary: rgba(255, 255, 255, 0.12);
+	--bg-glass-minimal: rgba(255, 255, 255, 0.03);
+	
+	/* Borders */
+	--border-glass-primary: rgba(255, 255, 255, 0.2);
+	--border-glass-secondary: rgba(255, 255, 255, 0.15);
+	--border-glass-tertiary: rgba(255, 255, 255, 0.1);
+	--border-dashed: rgba(255, 255, 255, 0.1);
+	
+	/* Border radius */
+	--radius-small: 6px;
+	--radius-medium: 12px;
+	--radius-large: 15px;
+	--radius-xl: 20px;
+	--radius-xxl: 25px;
+	
+	/* Spacing */
+	--spacing-xs: 4px;
+	--spacing-sm: 8px;
+	--spacing-md: 10px;
+	--spacing-lg: 15px;
+	--spacing-xl: 20px;
+	--spacing-2xl: 25px;
+	--spacing-3xl: 30px;
+	--spacing-4xl: 35px;
+	
+	/* Typography */
+	--font-primary: 'Cinzel', serif;
+	--font-secondary: 'Crimson Text', serif;
+	--font-weight-normal: 400;
+	--font-weight-medium: 600;
+	--font-weight-bold: 700;
+	
+	/* Transitions */
+	--transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	--transition-bounce: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+	--transition-fast: all 0.3s ease;
+	--transition-slow: left 0.5s;
+	
+	/* Shadows */
+	--shadow-small: 0 4px 15px;
+	--shadow-medium: 0 6px 20px;
+	--shadow-large: 0 8px 25px;
+	--shadow-xl: 0 10px 30px;
+	--shadow-2xl: 0 12px 35px;
+	--shadow-3xl: 0 20px 40px;
+	--shadow-card: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+	--shadow-collection: 0 10px 40px rgba(0, 0, 0, 0.3);
+	--shadow-hover: 0 20px 50px rgba(0, 0, 0, 0.5);
+	
+	/* Backdrop filters */
+	--backdrop-blur-sm: blur(5px);
+	--backdrop-blur-md: blur(10px);
+	--backdrop-blur-lg: blur(20px);
+}
+
+body {
+	margin: 0;
+	padding: var(--spacing-xl);
+	background: linear-gradient(135deg, var(--color-bg-dark-primary) 0%, var(--color-bg-dark-secondary) 50%, var(--color-bg-dark-tertiary) 100%);
+	min-height: 100vh;
+	color: var(--color-text-primary);
+	font-family: var(--font-secondary);
+	position: relative;
+	overflow-x: hidden;
+}
+
+body::before {
+	content: '';
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: 
+		radial-gradient(circle at 20% 30%, rgba(138, 43, 226, 0.15) 0%, transparent 50%),
+		radial-gradient(circle at 80% 70%, rgba(25, 118, 210, 0.15) 0%, transparent 50%),
+		radial-gradient(circle at 40% 80%, rgba(46, 125, 50, 0.1) 0%, transparent 50%);
+	pointer-events: none;
+	z-index: -1;
+}
+
+/* Error styles */
+.error {
+	color: var(--color-error);
+	margin-top: 2rem;
+	text-align: center;
+	font-size: 1.2rem;
+	padding: var(--spacing-xl);
+	background: rgba(255, 107, 107, 0.1);
+	border: 1px solid rgba(255, 107, 107, 0.3);
+	border-radius: var(--radius-large);
+	backdrop-filter: var(--backdrop-blur-sm);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+	width: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+	background: linear-gradient(180deg, var(--color-primary-gold), var(--color-primary-gold-dark));
+	border-radius: var(--spacing-xs);
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: linear-gradient(180deg, var(--color-primary-gold-variant), var(--color-primary-gold-darker));
+}
