@@ -14,6 +14,7 @@
 		updateCardQuantity
 	} from '$lib/utils';
 	import { onMount } from 'svelte';
+	import { collection, collectionCount, uniqueCardCount } from '$lib/stores/collection';
 	
 	// Import new components
 	import Navigation from '$lib/components/common/Navigation.svelte';
@@ -37,7 +38,6 @@
 	let addMessage: string = '';
 	let viewingCollection: boolean = false;
 	let viewingAnalytics: boolean = false;
-	let collection: ScryfallCard[] = [];
 	let showImageModal: boolean = false;
 	let modalImageSrc: string = '';
 	let modalImageName: string = '';
@@ -49,7 +49,8 @@
 
 	// Load collection on mount
 	async function loadCollection(): Promise<void> {
-		collection = await loadCollectionFromStorage();
+		const loadedCollection = await loadCollectionFromStorage();
+		collection.set(loadedCollection);
 	}
 
 	// Load collection on page load
@@ -121,10 +122,8 @@
 			addedToCollection = true;
 			addMessage = result.message || 'Added to collection!';
 			
-			// Update local collection if viewing
-			if (viewingCollection) {
-				await loadCollection();
-			}
+			// Always update local collection state for reactivity
+			await loadCollection();
 			
 			// Reset the feedback after 3 seconds
 			setTimeout(() => {
@@ -214,19 +213,12 @@
 		modalImageName = '';
 	}
 
-	function getCollectionCount(): number {
-		return collection.reduce((total, card) => total + (card.quantity || 1), 0);
-	}
-
-	function getUniqueCardCount(): number {
-		return collection.length;
-	}
 
 	// Collection management functions
 	async function removeFromCollection(cardId: string, removeAll: boolean = false): Promise<void> {
 		const result = await removeCardFromCollection(cardId, removeAll);
 		if (result.success) {
-			// Update local collection
+			// Always update local collection for reactivity
 			await loadCollection();
 		}
 	}
@@ -234,20 +226,20 @@
 	async function updateQuantity(cardId: string, quantity: number): Promise<void> {
 		const result = await updateCardQuantity(cardId, quantity);
 		if (result.success) {
-			// Update local collection
+			// Always update local collection for reactivity
 			await loadCollection();
 		}
 	}
 
 	// Collection event handlers
-	function handleUpdateQuantity(event: CustomEvent) {
+	async function handleUpdateQuantity(event: CustomEvent) {
 		const { cardId, quantity } = event.detail;
-		updateQuantity(cardId, quantity);
+		await updateQuantity(cardId, quantity);
 	}
 
-	function handleRemoveCard(event: CustomEvent) {
+	async function handleRemoveCard(event: CustomEvent) {
 		const { cardId, removeAll } = event.detail;
-		removeFromCollection(cardId, removeAll);
+		await removeFromCollection(cardId, removeAll);
 	}
 </script>
 
@@ -255,8 +247,8 @@
 <Navigation 
 	{viewingCollection} 
 	{viewingAnalytics}
-	collectionCount={getCollectionCount()}
-	uniqueCardCount={getUniqueCardCount()}
+	collectionCount={$collectionCount}
+	uniqueCardCount={$uniqueCardCount}
 	on:toggleCollection={handleToggleCollection}
 	on:toggleAnalytics={handleToggleAnalytics}
 />
@@ -294,7 +286,7 @@
 {:else if viewingCollection}
 	<!-- Collection View -->
 	<CollectionView
-		{collection}
+		collection={$collection}
 		bind:colorFilter={colorFilter}
 		bind:sortBy={sortBy}
 		on:openImageModal={handleOpenImageModal}
@@ -305,7 +297,7 @@
 {:else if viewingAnalytics}
 	<!-- Analytics View -->
 	<AnalyticsView
-		{collection}
+		collection={$collection}
 		{analyticsData}
 		{analyticsLoading}
 		{updatingPrices}
