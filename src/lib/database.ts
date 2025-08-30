@@ -48,16 +48,46 @@ function initializeDatabase(database: Database.Database): void {
 		)
 	`;
 
+	// Create decks table
+	const createDecksTable = `
+		CREATE TABLE IF NOT EXISTS decks (
+			id TEXT PRIMARY KEY,
+			name TEXT NOT NULL,
+			description TEXT,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)
+	`;
+
+	// Create deck_cards junction table
+	const createDeckCardsTable = `
+		CREATE TABLE IF NOT EXISTS deck_cards (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			deck_id TEXT NOT NULL,
+			card_id TEXT NOT NULL,
+			quantity INTEGER DEFAULT 1,
+			created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (deck_id) REFERENCES decks(id) ON DELETE CASCADE,
+			FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE,
+			UNIQUE(deck_id, card_id)
+		)
+	`;
+
 	// Create indexes for better performance
 	const createIndexes = [
 		`CREATE INDEX IF NOT EXISTS idx_cards_name ON cards(name)`,
 		`CREATE INDEX IF NOT EXISTS idx_cards_type_line ON cards(type_line)`,
 		`CREATE INDEX IF NOT EXISTS idx_cards_created_at ON cards(created_at)`,
-		`CREATE INDEX IF NOT EXISTS idx_cards_quantity ON cards(quantity)`
+		`CREATE INDEX IF NOT EXISTS idx_cards_quantity ON cards(quantity)`,
+		`CREATE INDEX IF NOT EXISTS idx_decks_name ON decks(name)`,
+		`CREATE INDEX IF NOT EXISTS idx_deck_cards_deck_id ON deck_cards(deck_id)`,
+		`CREATE INDEX IF NOT EXISTS idx_deck_cards_card_id ON deck_cards(card_id)`
 	];
 
 	try {
 		database.exec(createCardsTable);
+		database.exec(createDecksTable);
+		database.exec(createDeckCardsTable);
 		
 		// Check if quantity column exists, if not add it for existing databases
 		const columnInfo = database.prepare("PRAGMA table_info(cards)").all() as Array<{name: string}>;
@@ -116,6 +146,22 @@ export function closeDatabase(): void {
 }
 
 // Database operations
+export interface DeckRow {
+	id: string;
+	name: string;
+	description: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface DeckCardRow {
+	id: number;
+	deck_id: string;
+	card_id: string;
+	quantity: number;
+	created_at: string;
+}
+
 export interface CardRow {
 	id: string;
 	name: string;

@@ -3,7 +3,7 @@
 	import { calculateCollectionValue, formatCurrency } from '$lib/utils';
 	import CollectionControls from './CollectionControls.svelte';
 	import CollectionCard from './CollectionCard.svelte';
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, onMount } from 'svelte';
 	
 	export let collection: ScryfallCard[] = [];
 	export let colorFilter: string | null = null;
@@ -11,8 +11,24 @@
 	
 	// Declare the sorted collection variable
 	let sortedCollection: ScryfallCard[] = [];
+	let availableDecks: any[] = [];
 	
 	const dispatch = createEventDispatcher();
+	
+	onMount(() => {
+		loadDecks();
+	});
+	
+	async function loadDecks() {
+		try {
+			const response = await fetch('/api/decks');
+			if (response.ok) {
+				availableDecks = await response.json();
+			}
+		} catch (error) {
+			console.error('Failed to load decks:', error);
+		}
+	}
 	
 	function getCardColorCategory(card: ScryfallCard): string {
 		const colors = card.colors || [];
@@ -125,6 +141,32 @@
 	function handleRemoveCard(event: CustomEvent) {
 		dispatch('removeCard', event.detail);
 	}
+	
+	async function handleAddToDeck(event: CustomEvent) {
+		const { cardId, deckId, quantity } = event.detail;
+		
+		try {
+			const response = await fetch(`/api/decks/${deckId}/cards`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ cardId, quantity })
+			});
+			
+			if (response.ok) {
+				const result = await response.json();
+				// Show success message
+				alert(result.message || 'Card added to deck!');
+			} else {
+				const error = await response.json();
+				alert(error.error || 'Failed to add card to deck');
+			}
+		} catch (error) {
+			console.error('Error adding card to deck:', error);
+			alert('Failed to add card to deck');
+		}
+	}
 
 	// Reactive statement to ensure collection updates when filters change
 	$: sortedCollection = getSortedCollection(collection, colorFilter, sortBy);
@@ -162,9 +204,11 @@
 			{#each sortedCollection as card}
 				<CollectionCard 
 					{card}
+					{availableDecks}
 					on:openImageModal={handleOpenImageModal}
 					on:updateQuantity={handleUpdateQuantity}
 					on:removeCard={handleRemoveCard}
+					on:addToDeck={handleAddToDeck}
 				/>
 			{/each}
 		</div>

@@ -23,6 +23,7 @@
 	import CardDetails from '$lib/components/search/CardDetails.svelte';
 	import CollectionView from '$lib/components/collection/CollectionView.svelte';
 	import AnalyticsView from '$lib/components/analytics/AnalyticsView.svelte';
+	import DecksManager from '$lib/components/decks/DecksManager.svelte';
 	import ImageModal from '$lib/components/common/ImageModal.svelte';
 	
 	// Import global styles
@@ -38,6 +39,7 @@
 	let addMessage: string = '';
 	let viewingCollection: boolean = false;
 	let viewingAnalytics: boolean = false;
+	let viewingDecks: boolean = false;
 	let showImageModal: boolean = false;
 	let modalImageSrc: string = '';
 	let modalImageName: string = '';
@@ -148,6 +150,7 @@
 	function handleToggleCollection() {
 		viewingCollection = !viewingCollection;
 		viewingAnalytics = false;
+		viewingDecks = false;
 		if (viewingCollection) {
 			loadCollection();
 		}
@@ -156,9 +159,16 @@
 	function handleToggleAnalytics() {
 		viewingAnalytics = !viewingAnalytics;
 		viewingCollection = false;
+		viewingDecks = false;
 		if (viewingAnalytics) {
 			loadAnalytics();
 		}
+	}
+
+	function handleToggleDecks() {
+		viewingDecks = !viewingDecks;
+		viewingCollection = false;
+		viewingAnalytics = false;
 	}
 
 	async function loadAnalytics(): Promise<void> {
@@ -247,13 +257,15 @@
 <Navigation 
 	{viewingCollection} 
 	{viewingAnalytics}
+	{viewingDecks}
 	collectionCount={$collectionCount}
 	uniqueCardCount={$uniqueCardCount}
 	on:toggleCollection={handleToggleCollection}
 	on:toggleAnalytics={handleToggleAnalytics}
+	on:toggleDecks={handleToggleDecks}
 />
 
-{#if !viewingCollection && !viewingAnalytics}
+{#if !viewingCollection && !viewingAnalytics && !viewingDecks}
 	<!-- Search Section -->
 	<SearchForm 
 		bind:cardName={cardName}
@@ -302,6 +314,13 @@
 		{analyticsLoading}
 		{updatingPrices}
 		on:updatePrices={handleUpdatePrices}
+	/>
+
+{:else if viewingDecks}
+	<!-- Decks View -->
+	<DecksManager
+		showDecks={viewingDecks}
+		on:openImageModal={handleOpenImageModal}
 	/>
 {/if}
 

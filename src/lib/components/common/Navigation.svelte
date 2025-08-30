@@ -1,6 +1,7 @@
 <script lang="ts">
 	export let viewingCollection: boolean = false;
 	export let viewingAnalytics: boolean = false;
+	export let viewingDecks: boolean = false;
 	export let collectionCount: number = 0;
 	export let uniqueCardCount: number = 0;
 	
@@ -15,6 +16,10 @@
 	function toggleAnalyticsView() {
 		dispatch('toggleAnalytics');
 	}
+	
+	function toggleDecksView() {
+		dispatch('toggleDecks');
+	}
 </script>
 
 <h1 class="main-title">Magic Card Search</h1>
@@ -22,6 +27,9 @@
 <div class="top-nav">
 	<button class="collection-button" on:click={toggleCollectionView}>
 		{viewingCollection ? '← Back to Search' : `📚 View Collection (${collectionCount} cards, ${uniqueCardCount} unique)`}
+	</button>
+	<button class="decks-button" on:click={toggleDecksView}>
+		{viewingDecks ? '← Back to Search' : '🃏 Deck Builder'}
 	</button>
 	<button class="analytics-button" on:click={toggleAnalyticsView}>
 		{viewingAnalytics ? '← Back to Search' : '📊 Analytics'}
@@ -68,6 +76,7 @@
 		justify-content: center;
 		gap: 20px;
 		margin-bottom: 3rem;
+		flex-wrap: wrap;
 	}
 	
 	.collection-button {
@@ -142,5 +151,42 @@
 		transform: translateY(-3px);
 		box-shadow: 0 12px 35px rgba(201, 176, 55, 0.6);
 		background: linear-gradient(135deg, #d4bd3a 0%, #f7ea95 100%);
+	}
+	
+	.decks-button {
+		background: linear-gradient(135deg, #2196F3 0%, #42A5F5 100%);
+		color: white;
+		border: none;
+		padding: 14px 28px;
+		border-radius: 25px;
+		cursor: pointer;
+		font-size: 16px;
+		font-family: 'Cinzel', serif;
+		font-weight: 600;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+		position: relative;
+		overflow: hidden;
+	}
+
+	.decks-button::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: -100%;
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+		transition: left 0.5s;
+	}
+
+	.decks-button:hover::before {
+		left: 100%;
+	}
+
+	.decks-button:hover {
+		transform: translateY(-3px);
+		box-shadow: 0 12px 35px rgba(33, 150, 243, 0.6);
+		background: linear-gradient(135deg, #2196F3 0%, #55B2F6 100%);
 	}
 </style>
