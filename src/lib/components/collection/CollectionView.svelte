@@ -8,6 +8,7 @@
 	export let collection: ScryfallCard[] = [];
 	export let colorFilter: string | null = null;
 	export let sortBy: string = 'value-desc';
+	export let searchFilter: string = '';
 	
 	// Declare the sorted collection variable
 	let sortedCollection: ScryfallCard[] = [];
@@ -61,8 +62,16 @@
 		return cardCategory === filter;
 	}
 
+	function matchesSearchFilter(card: ScryfallCard, search = searchFilter): boolean {
+		if (!search) return true;
+		
+		return card.name.toLowerCase().startsWith(search.toLowerCase().trim());
+	}
+
 	function getFilteredCollection(): ScryfallCard[] {
-		return colorFilter ? collection.filter(card => matchesColorFilter(card, colorFilter)) : collection;
+		return collection.filter(card => 
+			matchesColorFilter(card, colorFilter) && matchesSearchFilter(card, searchFilter)
+		);
 	}
 
 	function getFilteredCardCount(): number {
@@ -81,9 +90,11 @@
 		return collection.length;
 	}
 
-	function getSortedCollection(col = collection, filter = colorFilter, sort = sortBy): ScryfallCard[] {
-		// First apply color filter, then sort
-		const filtered = filter ? col.filter(card => matchesColorFilter(card, filter)) : [...col];
+	function getSortedCollection(col = collection, colorF = colorFilter, search = searchFilter, sort = sortBy): ScryfallCard[] {
+		// First apply both filters, then sort
+		const filtered = col.filter(card => 
+			matchesColorFilter(card, colorF) && matchesSearchFilter(card, search)
+		);
 		
 		switch (sort) {
 			case 'value-desc':
@@ -169,7 +180,7 @@
 	}
 
 	// Reactive statement to ensure collection updates when filters change
-	$: sortedCollection = getSortedCollection(collection, colorFilter, sortBy);
+	$: sortedCollection = getSortedCollection(collection, colorFilter, searchFilter, sortBy);
 </script>
 
 <div class="collection-view">
@@ -177,8 +188,8 @@
 		<div class="collection-info">
 			<h2>
 				My Collection 
-				{#if colorFilter}
-					({getFilteredCardCount()} cards, {getFilteredUniqueCardCount()} unique - {colorFilter} filter)
+				{#if colorFilter || searchFilter}
+					({getFilteredCardCount()} cards, {getFilteredUniqueCardCount()} unique{#if colorFilter} - {colorFilter} filter{/if}{#if searchFilter} - "{searchFilter}" search{/if})
 				{:else}
 					({getCollectionCount()} cards, {getUniqueCardCount()} unique)
 				{/if}
@@ -193,6 +204,7 @@
 			<CollectionControls 
 				bind:colorFilter={colorFilter} 
 				bind:sortBy={sortBy}
+				bind:searchFilter={searchFilter}
 			/>
 		{/if}
 	</div>

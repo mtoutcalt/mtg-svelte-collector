@@ -45,6 +45,7 @@
 	let modalImageName: string = '';
 	let colorFilter: string | null = null;
 	let sortBy: string = 'value-desc';
+	let searchFilter: string = '';
 	let analyticsData: any = null;
 	let analyticsLoading: boolean = false;
 	let updatingPrices: boolean = false;
@@ -301,6 +302,7 @@
 		collection={$collection}
 		bind:colorFilter={colorFilter}
 		bind:sortBy={sortBy}
+		bind:searchFilter={searchFilter}
 		on:openImageModal={handleOpenImageModal}
 		on:updateQuantity={handleUpdateQuantity}
 		on:removeCard={handleRemoveCard}

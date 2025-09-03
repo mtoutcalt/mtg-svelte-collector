@@ -1,6 +1,7 @@
 <script lang="ts">
 	export let colorFilter: string | null = null;
 	export let sortBy: string = 'value-desc';
+	export let searchFilter: string = '';
 	
 	function setColorFilter(filter: string | null) {
 		colorFilter = filter;
@@ -12,6 +13,16 @@
 </script>
 
 <div class="collection-controls">
+	<div class="search-section">
+		<label for="search-input" class="search-label">Search cards:</label>
+		<input
+			id="search-input"
+			type="text"
+			bind:value={searchFilter}
+			placeholder="Type to filter cards..."
+			class="search-input"
+		/>
+	</div>
 	<div class="filter-section">
 		<div class="filter-label">Filter by color:</div>
 		<div class="color-filters">
@@ -97,6 +108,13 @@
 		gap: 15px;
 	}
 
+	.search-section {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 8px;
+	}
+
 	.filter-section {
 		display: flex;
 		flex-direction: column;
@@ -111,12 +129,42 @@
 		gap: 8px;
 	}
 
+	.search-label,
 	.filter-label {
 		font-family: 'Cinzel', serif;
 		font-size: 0.9rem;
 		font-weight: 600;
 		color: rgba(232, 233, 237, 0.8);
 		margin: 0;
+	}
+
+	.search-input {
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.05) 100%);
+		border: 2px solid rgba(255, 255, 255, 0.15);
+		border-radius: 12px;
+		color: #e8e9ed;
+		font-family: 'Crimson Text', serif;
+		font-size: 1rem;
+		padding: 10px 14px;
+		transition: all 0.3s ease;
+		backdrop-filter: blur(5px);
+		min-width: 250px;
+	}
+
+	.search-input:focus {
+		outline: none;
+		border-color: #c9b037;
+		box-shadow: 0 0 15px rgba(201, 176, 55, 0.3);
+		background: rgba(255, 255, 255, 0.12);
+	}
+
+	.search-input:hover {
+		border-color: #c9b037;
+		background: rgba(255, 255, 255, 0.12);
+	}
+
+	.search-input::placeholder {
+		color: rgba(232, 233, 237, 0.5);
 	}
 
 	.color-filters {
@@ -206,11 +254,13 @@
 			align-items: center;
 		}
 
+		.search-section,
 		.filter-section,
 		.sort-section {
 			align-items: center;
 		}
 
+		.search-input,
 		.sort-dropdown {
 			min-width: 250px;
 		}
