@@ -8,8 +8,10 @@
 	export let availableDecks: any[] = [];
 	
 	const dispatch = createEventDispatcher();
-	
+
 	let showDeckSelector = false;
+	let isRefreshingPrice = false;
+	let priceRefreshError = '';
 	
 	function handleImageClick() {
 		dispatch('openImageModal', {
@@ -29,6 +31,68 @@
 	function handleAddToDeck(deckId: string) {
 		dispatch('addToDeck', { cardId: card.id, deckId, quantity: 1 });
 		showDeckSelector = false;
+	}
+
+	async function handleRefreshPrice() {
+		isRefreshingPrice = true;
+		priceRefreshError = '';
+
+		try {
+			const response = await fetch(`/api/collection/${card.id}/price`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error('Failed to refresh price');
+			}
+
+			const data = await response.json();
+
+			// Update the card with new price data
+			card.prices = {
+				...card.prices,
+				usd: data.card.price
+			};
+
+			if (card.priceHistory) {
+				card.priceHistory.lastUpdated = data.card.lastUpdated;
+			} else {
+				card.priceHistory = { lastUpdated: data.card.lastUpdated };
+			}
+
+			// Notify parent component about the price update
+			dispatch('priceUpdated', {
+				cardId: card.id,
+				price: data.card.price,
+				lastUpdated: data.card.lastUpdated
+			});
+		} catch (error) {
+			console.error('Error refreshing price:', error);
+			priceRefreshError = 'Failed to refresh price';
+		} finally {
+			isRefreshingPrice = false;
+		}
+	}
+
+	function formatLastUpdated(timestamp: string | undefined): string {
+		if (!timestamp) return 'Never';
+
+		const date = new Date(timestamp);
+		const now = new Date();
+		const diffMs = now.getTime() - date.getTime();
+		const diffMins = Math.floor(diffMs / 60000);
+		const diffHours = Math.floor(diffMs / 3600000);
+		const diffDays = Math.floor(diffMs / 86400000);
+
+		if (diffMins < 1) return 'Just now';
+		if (diffMins < 60) return `${diffMins}m ago`;
+		if (diffHours < 24) return `${diffHours}h ago`;
+		if (diffDays < 30) return `${diffDays}d ago`;
+
+		return date.toLocaleDateString();
 	}
 	
 	function getValueTier(price: number): string {
@@ -60,6 +124,27 @@
 		<h3>{card.name}</h3>
 		<p class="card-type">{card.type_line}</p>
 		<p class="card-price">{card.prices?.usd ? `$${card.prices.usd} each` : 'N/A'}</p>
+
+		{#if !isDeckCard}
+			<div class="price-info-section">
+				<button
+					class="refresh-price-button"
+					on:click={handleRefreshPrice}
+					disabled={isRefreshingPrice}
+					title="Refresh price from Scryfall"
+				>
+					<span class="refresh-icon" class:spinning={isRefreshingPrice}>🔄</span>
+					{isRefreshingPrice ? 'Refreshing...' : 'Refresh Price'}
+				</button>
+				<p class="price-timestamp">
+					Last updated: {formatLastUpdated(card.priceHistory?.lastUpdated)}
+				</p>
+				{#if priceRefreshError}
+					<p class="price-error">{priceRefreshError}</p>
+				{/if}
+			</div>
+		{/if}
+
 		<div class="quantity-display">
 			<span class="quantity-label">Quantity: <strong>{displayQuantity}</strong></span>
 			<div class="quantity-controls-collection">
@@ -538,5 +623,75 @@
 	@keyframes price-glow {
 		0% { text-shadow: 0 3px 15px rgba(76, 175, 80, 0.8); }
 		100% { text-shadow: 0 5px 25px rgba(76, 175, 80, 1), 0 0 20px rgba(76, 175, 80, 0.6); }
+	}
+
+	/* Price refresh section styles */
+	.price-info-section {
+		margin: 10px 0;
+		padding: 8px;
+		background: rgba(255, 255, 255, 0.05);
+		border-radius: 8px;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+	}
+
+	.refresh-price-button {
+		background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+		color: white;
+		border: none;
+		padding: 6px 12px;
+		border-radius: 8px;
+		cursor: pointer;
+		font-size: 0.85rem;
+		font-family: 'Cinzel', serif;
+		font-weight: 600;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		width: 100%;
+		box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+	}
+
+	.refresh-price-button:hover:not(:disabled) {
+		transform: translateY(-2px);
+		background: linear-gradient(135deg, #66bb6a 0%, #81c784 100%);
+		box-shadow: 0 4px 15px rgba(76, 175, 80, 0.5);
+	}
+
+	.refresh-price-button:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+		transform: none;
+	}
+
+	.refresh-icon {
+		display: inline-block;
+		transition: transform 0.3s ease;
+	}
+
+	.refresh-icon.spinning {
+		animation: spin 1s linear infinite;
+	}
+
+	@keyframes spin {
+		from { transform: rotate(0deg); }
+		to { transform: rotate(360deg); }
+	}
+
+	.price-timestamp {
+		margin: 6px 0 0 0;
+		font-size: 0.75rem;
+		color: rgba(232, 233, 237, 0.6);
+		text-align: center;
+		font-style: italic;
+	}
+
+	.price-error {
+		margin: 6px 0 0 0;
+		font-size: 0.75rem;
+		color: #f44336;
+		text-align: center;
+		font-weight: 600;
 	}
 </style>
