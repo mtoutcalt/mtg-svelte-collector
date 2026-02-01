@@ -9,7 +9,8 @@
 	export let colorFilter: string | null = null;
 	export let sortBy: string = 'value-desc';
 	export let searchFilter: string = '';
-	
+	export let favoritesOnly: boolean = false;
+
 	// Declare the sorted collection variable
 	let sortedCollection: ScryfallCard[] = [];
 	let availableDecks: any[] = [];
@@ -64,13 +65,20 @@
 
 	function matchesSearchFilter(card: ScryfallCard, search = searchFilter): boolean {
 		if (!search) return true;
-		
+
 		return card.name.toLowerCase().startsWith(search.toLowerCase().trim());
 	}
 
+	function matchesFavoritesFilter(card: ScryfallCard, favFilter = favoritesOnly): boolean {
+		if (!favFilter) return true;
+		return card.isFavorite === true;
+	}
+
 	function getFilteredCollection(): ScryfallCard[] {
-		return collection.filter(card => 
-			matchesColorFilter(card, colorFilter) && matchesSearchFilter(card, searchFilter)
+		return collection.filter(card =>
+			matchesColorFilter(card, colorFilter) &&
+			matchesSearchFilter(card, searchFilter) &&
+			matchesFavoritesFilter(card, favoritesOnly)
 		);
 	}
 
@@ -90,10 +98,12 @@
 		return collection.length;
 	}
 
-	function getSortedCollection(col = collection, colorF = colorFilter, search = searchFilter, sort = sortBy): ScryfallCard[] {
-		// First apply both filters, then sort
-		const filtered = col.filter(card => 
-			matchesColorFilter(card, colorF) && matchesSearchFilter(card, search)
+	function getSortedCollection(col = collection, colorF = colorFilter, search = searchFilter, sort = sortBy, favFilter = favoritesOnly): ScryfallCard[] {
+		// First apply all filters, then sort
+		const filtered = col.filter(card =>
+			matchesColorFilter(card, colorF) &&
+			matchesSearchFilter(card, search) &&
+			matchesFavoritesFilter(card, favFilter)
 		);
 		
 		switch (sort) {
@@ -127,12 +137,20 @@
 					const bCategory = getCardColorCategory(b);
 					const aOrder = getColorSortOrder(aCategory);
 					const bOrder = getColorSortOrder(bCategory);
-					
+
 					if (aOrder !== bOrder) {
 						return aOrder - bOrder;
 					}
-					
+
 					// Same color, sort by name
+					return a.name.localeCompare(b.name);
+				});
+			case 'favorites-first':
+				return filtered.sort((a, b) => {
+					const aFav = a.isFavorite ? 1 : 0;
+					const bFav = b.isFavorite ? 1 : 0;
+					if (bFav !== aFav) return bFav - aFav;
+					// Secondary sort by name
 					return a.name.localeCompare(b.name);
 				});
 			default:
@@ -155,7 +173,7 @@
 	
 	async function handleAddToDeck(event: CustomEvent) {
 		const { cardId, deckId, quantity } = event.detail;
-		
+
 		try {
 			const response = await fetch(`/api/decks/${deckId}/cards`, {
 				method: 'POST',
@@ -164,7 +182,7 @@
 				},
 				body: JSON.stringify({ cardId, quantity })
 			});
-			
+
 			if (response.ok) {
 				const result = await response.json();
 				// Show success message
@@ -179,17 +197,25 @@
 		}
 	}
 
+	function handleFavoriteToggled(event: CustomEvent) {
+		const { cardId, isFavorite } = event.detail;
+		// Update local collection state
+		collection = collection.map(card =>
+			card.id === cardId ? { ...card, isFavorite } : card
+		);
+	}
+
 	// Reactive statement to ensure collection updates when filters change
-	$: sortedCollection = getSortedCollection(collection, colorFilter, searchFilter, sortBy);
+	$: sortedCollection = getSortedCollection(collection, colorFilter, searchFilter, sortBy, favoritesOnly);
 </script>
 
 <div class="collection-view">
 	<div class="collection-header">
 		<div class="collection-info">
 			<h2>
-				My Collection 
-				{#if colorFilter || searchFilter}
-					({getFilteredCardCount()} cards, {getFilteredUniqueCardCount()} unique{#if colorFilter} - {colorFilter} filter{/if}{#if searchFilter} - "{searchFilter}" search{/if})
+				My Collection
+				{#if colorFilter || searchFilter || favoritesOnly}
+					({getFilteredCardCount()} cards, {getFilteredUniqueCardCount()} unique{#if colorFilter} - {colorFilter} filter{/if}{#if searchFilter} - "{searchFilter}" search{/if}{#if favoritesOnly} - Favorites{/if})
 				{:else}
 					({getCollectionCount()} cards, {getUniqueCardCount()} unique)
 				{/if}
@@ -201,10 +227,11 @@
 			{/if}
 		</div>
 		{#if collection.length > 0}
-			<CollectionControls 
-				bind:colorFilter={colorFilter} 
+			<CollectionControls
+				bind:colorFilter={colorFilter}
 				bind:sortBy={sortBy}
 				bind:searchFilter={searchFilter}
+				bind:favoritesOnly={favoritesOnly}
 			/>
 		{/if}
 	</div>
@@ -214,13 +241,14 @@
 	{:else}
 		<div class="collection-grid">
 			{#each sortedCollection as card}
-				<CollectionCard 
+				<CollectionCard
 					{card}
 					{availableDecks}
 					on:openImageModal={handleOpenImageModal}
 					on:updateQuantity={handleUpdateQuantity}
 					on:removeCard={handleRemoveCard}
 					on:addToDeck={handleAddToDeck}
+					on:favoriteToggled={handleFavoriteToggled}
 				/>
 			{/each}
 		</div>

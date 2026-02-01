@@ -11,6 +11,17 @@ export interface ScryfallCard {
 		small: string;
 		large: string;
 	};
+	card_faces?: Array<{
+		name: string;
+		mana_cost?: string;
+		type_line?: string;
+		oracle_text?: string;
+		image_uris?: {
+			normal: string;
+			small: string;
+			large: string;
+		};
+	}>;
 	prices?: {
 		usd?: string;
 		usd_foil?: string;
@@ -24,6 +35,7 @@ export interface ScryfallCard {
 		usd12moAgo?: string;
 		lastUpdated?: string;
 	};
+	isFavorite?: boolean;
 }
 
 export interface ScryfallError {
@@ -61,6 +73,21 @@ export function formatCurrency(value: number): string {
 		style: 'currency',
 		currency: 'USD'
 	}).format(value);
+}
+
+// Helper function to get card image URI (handles double-faced cards)
+export function getCardImageUri(card: ScryfallCard, size: 'normal' | 'small' | 'large' = 'normal'): string {
+	// Try to get image from root level first (single-faced cards)
+	if (card.image_uris?.[size]) {
+		return card.image_uris[size];
+	}
+
+	// Fallback to first card face (double-faced cards)
+	if (card.card_faces?.[0]?.image_uris?.[size]) {
+		return card.card_faces[0].image_uris[size];
+	}
+
+	return '';
 }
 
 // Storage utilities - now using API endpoints for database operations
@@ -167,7 +194,7 @@ export async function updateCardQuantity(cardId: string, quantity: number): Prom
 			},
 			body: JSON.stringify({ cardId, quantity })
 		});
-		
+
 		if (response.ok) {
 			const data = await response.json();
 			return { success: true, quantity: data.quantity, message: data.message };
@@ -179,5 +206,29 @@ export async function updateCardQuantity(cardId: string, quantity: number): Prom
 	} catch (error) {
 		console.error('Error updating card quantity:', error);
 		return { success: false, message: 'Failed to update quantity' };
+	}
+}
+
+export async function toggleCardFavorite(
+	cardId: string,
+	isFavorite: boolean
+): Promise<{ success: boolean; isFavorite?: boolean; message?: string }> {
+	try {
+		const response = await fetch(`/api/collection/${cardId}/favorite`, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ isFavorite })
+		});
+
+		if (response.ok) {
+			const data = await response.json();
+			return { success: true, isFavorite: data.isFavorite, message: data.message };
+		} else {
+			const errorData = await response.json();
+			return { success: false, message: errorData.error };
+		}
+	} catch (error) {
+		console.error('Error toggling favorite:', error);
+		return { success: false, message: 'Failed to update favorite status' };
 	}
 }

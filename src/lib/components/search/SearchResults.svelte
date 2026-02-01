@@ -1,12 +1,13 @@
 <script lang="ts">
 	import type { ScryfallCard } from '$lib/utils';
+	import { getCardImageUri } from '$lib/utils';
 	import { createEventDispatcher } from 'svelte';
-	
+
 	export let searchResults: ScryfallCard[] = [];
 	export let cardName: string = '';
-	
+
 	const dispatch = createEventDispatcher();
-	
+
 	function selectCard(card: ScryfallCard) {
 		dispatch('selectCard', card);
 	}
@@ -22,9 +23,9 @@
 			{#each searchResults as card}
 				<div class="result-card" on:click={() => selectCard(card)} on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && selectCard(card)} role="button" tabindex="0">
 					<div class="result-image">
-						<img 
-							src={card.image_uris?.small || card.image_uris?.normal} 
-							alt={card.name} 
+						<img
+							src={getCardImageUri(card, 'small') || getCardImageUri(card, 'normal')}
+							alt={card.name}
 							class="result-card-image"
 						/>
 					</div>

@@ -109,12 +109,27 @@ function initializeDatabase(database: Database.Database): void {
 
 		// Check if color columns exist, if not add them for color-based sorting
 		const hasColorColumns = columnInfo.some(col => col.name === 'colors');
-		
+
 		if (!hasColorColumns) {
 			database.exec('ALTER TABLE cards ADD COLUMN colors TEXT');
 			database.exec('ALTER TABLE cards ADD COLUMN color_identity TEXT');
 		}
-		
+
+		// Check if card_faces column exists, if not add it for double-faced cards support
+		const hasCardFacesColumn = columnInfo.some(col => col.name === 'card_faces');
+
+		if (!hasCardFacesColumn) {
+			database.exec('ALTER TABLE cards ADD COLUMN card_faces TEXT');
+		}
+
+		// Check if is_favorite column exists, if not add it for favorites feature
+		const hasFavoriteColumn = columnInfo.some(col => col.name === 'is_favorite');
+
+		if (!hasFavoriteColumn) {
+			database.exec('ALTER TABLE cards ADD COLUMN is_favorite INTEGER DEFAULT 0');
+			database.exec('CREATE INDEX IF NOT EXISTS idx_cards_is_favorite ON cards(is_favorite)');
+		}
+
 		createIndexes.forEach(indexQuery => database.exec(indexQuery));
 		
 		// Create triggers to automatically update the updated_at timestamp
@@ -173,6 +188,7 @@ export interface CardRow {
 	image_normal: string | null;
 	image_small: string | null;
 	image_large: string | null;
+	card_faces: string | null;
 	price_usd: string | null;
 	price_usd_foil: string | null;
 	price_eur: string | null;
@@ -182,6 +198,7 @@ export interface CardRow {
 	price_usd_6mo_ago: string | null;
 	price_usd_12mo_ago: string | null;
 	price_last_updated: string | null;
+	is_favorite: number;
 	created_at: string;
 	updated_at: string;
 }
@@ -200,6 +217,7 @@ export function cardRowToScryfallCard(row: CardRow): ScryfallCard {
 			small: row.image_small || row.image_normal,
 			large: row.image_large || row.image_normal
 		} : undefined,
+		card_faces: row.card_faces ? JSON.parse(row.card_faces) : undefined,
 		prices: {
 			usd: row.price_usd || undefined,
 			usd_foil: row.price_usd_foil || undefined,
@@ -212,11 +230,17 @@ export function cardRowToScryfallCard(row: CardRow): ScryfallCard {
 			usd6moAgo: row.price_usd_6mo_ago || undefined,
 			usd12moAgo: row.price_usd_12mo_ago || undefined,
 			lastUpdated: row.price_last_updated || undefined
-		}
+		},
+		isFavorite: row.is_favorite === 1
 	};
 }
 
 export function scryfallCardToCardRow(card: ScryfallCard): Omit<CardRow, 'created_at' | 'updated_at'> {
+	// Handle double-faced cards - get image from card_faces if not available at root level
+	const imageNormal = card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || null;
+	const imageSmall = card.image_uris?.small || card.card_faces?.[0]?.image_uris?.small || null;
+	const imageLarge = card.image_uris?.large || card.card_faces?.[0]?.image_uris?.large || null;
+
 	return {
 		id: card.id,
 		name: card.name,
@@ -225,9 +249,10 @@ export function scryfallCardToCardRow(card: ScryfallCard): Omit<CardRow, 'create
 		oracle_text: card.oracle_text || null,
 		colors: card.colors ? JSON.stringify(card.colors) : null,
 		color_identity: card.color_identity ? JSON.stringify(card.color_identity) : null,
-		image_normal: card.image_uris?.normal || null,
-		image_small: card.image_uris?.small || null,
-		image_large: card.image_uris?.large || null,
+		image_normal: imageNormal,
+		image_small: imageSmall,
+		image_large: imageLarge,
+		card_faces: card.card_faces ? JSON.stringify(card.card_faces) : null,
 		price_usd: card.prices?.usd || null,
 		price_usd_foil: card.prices?.usd_foil || null,
 		price_eur: card.prices?.eur || null,
@@ -236,6 +261,7 @@ export function scryfallCardToCardRow(card: ScryfallCard): Omit<CardRow, 'create
 		fuzzy_match: card.fuzzyMatch ? 1 : 0,
 		price_usd_6mo_ago: card.priceHistory?.usd6moAgo || null,
 		price_usd_12mo_ago: card.priceHistory?.usd12moAgo || null,
-		price_last_updated: card.priceHistory?.lastUpdated || null
+		price_last_updated: card.priceHistory?.lastUpdated || null,
+		is_favorite: card.isFavorite ? 1 : 0
 	};
 }

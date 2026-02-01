@@ -1,21 +1,26 @@
 <script lang="ts">
 	import type { ScryfallCard } from '$lib/utils';
+	import { getCardImageUri, toggleCardFavorite } from '$lib/utils';
 	import { createEventDispatcher } from 'svelte';
-	
+
 	export let card: ScryfallCard;
 	export let quantity: number = card.quantity || 1;
 	export let isDeckCard: boolean = false;
 	export let availableDecks: any[] = [];
-	
+
 	const dispatch = createEventDispatcher();
 
 	let showDeckSelector = false;
 	let isRefreshingPrice = false;
 	let priceRefreshError = '';
-	
+	let showRemoveAllConfirmation = false;
+	let isFavoriteState = card.isFavorite || false;
+	let isTogglingFavorite = false;
+	let errorMessage = '';
+
 	function handleImageClick() {
 		dispatch('openImageModal', {
-			src: card.image_uris?.large || card.image_uris?.normal || '',
+			src: getCardImageUri(card, 'large') || getCardImageUri(card, 'normal') || '',
 			name: card.name
 		});
 	}
@@ -25,7 +30,22 @@
 	}
 	
 	function handleRemoveCard(removeAll: boolean) {
-		dispatch('removeCard', { cardId: card.id, removeAll });
+		if (removeAll && !isDeckCard) {
+			// Show confirmation modal for removing all copies
+			showRemoveAllConfirmation = true;
+		} else {
+			// Directly remove for single card or deck cards
+			dispatch('removeCard', { cardId: card.id, removeAll });
+		}
+	}
+
+	function confirmRemoveAll() {
+		showRemoveAllConfirmation = false;
+		dispatch('removeCard', { cardId: card.id, removeAll: true });
+	}
+
+	function cancelRemoveAll() {
+		showRemoveAllConfirmation = false;
 	}
 	
 	function handleAddToDeck(deckId: string) {
@@ -77,6 +97,21 @@
 		}
 	}
 
+	async function handleToggleFavorite() {
+		isTogglingFavorite = true;
+		const result = await toggleCardFavorite(card.id, !isFavoriteState);
+
+		if (result.success) {
+			isFavoriteState = result.isFavorite ?? false;
+			dispatch('favoriteToggled', { cardId: card.id, isFavorite: result.isFavorite });
+		} else {
+			errorMessage = result.message || 'Failed to update favorite';
+			setTimeout(() => errorMessage = '', 3000);
+		}
+
+		isTogglingFavorite = false;
+	}
+
 	function formatLastUpdated(timestamp: string | undefined): string {
 		if (!timestamp) return 'Never';
 
@@ -108,18 +143,31 @@
 </script>
 
 <div class="collection-card {valueTier}">
-	<button
-		class="image-button collection-image-button"
-		on:click={handleImageClick}
-		title="Click to enlarge"
-		aria-label="View larger image of {card.name}"
-	>
-		<img 
-			src={card.image_uris?.normal} 
-			alt={card.name} 
-			class="collection-card-image"
-		/>
-	</button>
+	<div class="card-image-wrapper">
+		<button
+			class="image-button collection-image-button"
+			on:click={handleImageClick}
+			title="Click to enlarge"
+			aria-label="View larger image of {card.name}"
+		>
+			<img
+				src={getCardImageUri(card, 'normal')}
+				alt={card.name}
+				class="collection-card-image"
+			/>
+		</button>
+		<div class="favorite-button-wrapper">
+			<button
+				class="favorite-button {isFavoriteState ? 'active' : ''}"
+				on:click|stopPropagation={handleToggleFavorite}
+				disabled={isTogglingFavorite}
+				title={isFavoriteState ? 'Remove from favorites' : 'Add to favorites'}
+				aria-label={isFavoriteState ? 'Remove from favorites' : 'Add to favorites'}
+			>
+				{isFavoriteState ? '⭐' : '☆'}
+			</button>
+		</div>
+	</div>
 	<div class="collection-card-info">
 		<h3>{card.name}</h3>
 		<p class="card-type">{card.type_line}</p>
@@ -209,6 +257,27 @@
 	</div>
 </div>
 
+{#if showRemoveAllConfirmation}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<div class="modal-overlay" on:click={cancelRemoveAll} role="button" tabindex="0" aria-label="Close confirmation">
+		<div class="confirmation-modal" on:click={(e) => e.stopPropagation()}>
+			<h3 class="confirmation-title">Remove All Copies?</h3>
+			<p class="confirmation-message">
+				Are you sure you want to remove all {displayQuantity} {displayQuantity === 1 ? 'copy' : 'copies'} of <strong>{card.name}</strong> from your collection?
+			</p>
+			<div class="confirmation-buttons">
+				<button class="confirm-yes-button" on:click={confirmRemoveAll}>
+					Yes, Remove All
+				</button>
+				<button class="confirm-no-button" on:click={cancelRemoveAll}>
+					Cancel
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
 <style>
 	.collection-card {
 		background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
@@ -262,7 +331,53 @@
 		outline-offset: 3px;
 		border-radius: 20px;
 	}
-	
+
+	.card-image-wrapper {
+		position: relative;
+		width: 100%;
+	}
+
+	.favorite-button-wrapper {
+		position: absolute;
+		top: 10px;
+		left: 10px;
+		z-index: 5;
+	}
+
+	.favorite-button {
+		background: rgba(0, 0, 0, 0.7);
+		border: 2px solid rgba(201, 176, 55, 0.5);
+		border-radius: 50%;
+		width: 45px;
+		height: 45px;
+		font-size: 1.5rem;
+		cursor: pointer;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		backdrop-filter: blur(5px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: rgba(201, 176, 55, 0.8);
+		padding: 0;
+	}
+
+	.favorite-button:hover:not(:disabled) {
+		transform: scale(1.15);
+		border-color: #ffd700;
+		background: rgba(0, 0, 0, 0.85);
+	}
+
+	.favorite-button.active {
+		border-color: #ffd700;
+		box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+		color: #ffd700;
+	}
+
+	.favorite-button:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
 	.collection-card-image {
 		width: 100%;
 		height: auto;
@@ -693,5 +808,127 @@
 		color: #f44336;
 		text-align: center;
 		font-weight: 600;
+	}
+
+	/* Confirmation Modal Styles */
+	.modal-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		background: rgba(0, 0, 0, 0.85);
+		backdrop-filter: blur(20px);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 1000;
+		animation: modalFadeIn 0.3s ease-out;
+	}
+
+	.confirmation-modal {
+		position: relative;
+		max-width: 500px;
+		width: 90%;
+		background: linear-gradient(135deg, rgba(40, 40, 40, 0.98) 0%, rgba(26, 26, 26, 0.98) 100%);
+		border: 2px solid rgba(255, 255, 255, 0.2);
+		border-radius: 20px;
+		backdrop-filter: blur(20px);
+		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+		padding: 2rem;
+		animation: modalSlideIn 0.3s ease-out;
+	}
+
+	.confirmation-title {
+		margin: 0 0 1rem 0;
+		font-family: 'Cinzel', serif;
+		font-size: 1.5rem;
+		font-weight: 600;
+		color: #c9b037;
+		text-shadow: 0 2px 10px rgba(201, 176, 55, 0.5);
+		text-align: center;
+	}
+
+	.confirmation-message {
+		margin: 0 0 1.5rem 0;
+		font-size: 1rem;
+		color: #e8e9ed;
+		line-height: 1.6;
+		text-align: center;
+	}
+
+	.confirmation-message strong {
+		color: #c9b037;
+		font-weight: 600;
+	}
+
+	.confirmation-buttons {
+		display: flex;
+		gap: 1rem;
+		justify-content: center;
+	}
+
+	.confirm-yes-button {
+		background: linear-gradient(135deg, #f44336 0%, #e57373 100%);
+		color: white;
+		border: none;
+		padding: 12px 24px;
+		border-radius: 12px;
+		cursor: pointer;
+		font-size: 1rem;
+		font-family: 'Cinzel', serif;
+		font-weight: 600;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+		flex: 1;
+		max-width: 200px;
+	}
+
+	.confirm-yes-button:hover {
+		transform: translateY(-2px);
+		background: linear-gradient(135deg, #f55a4e 0%, #ef5350 100%);
+		box-shadow: 0 8px 25px rgba(244, 67, 54, 0.6);
+	}
+
+	.confirm-no-button {
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+		color: #e8e9ed;
+		border: 2px solid rgba(255, 255, 255, 0.2);
+		padding: 12px 24px;
+		border-radius: 12px;
+		cursor: pointer;
+		font-size: 1rem;
+		font-family: 'Cinzel', serif;
+		font-weight: 600;
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		flex: 1;
+		max-width: 200px;
+	}
+
+	.confirm-no-button:hover {
+		transform: translateY(-2px);
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
+		border-color: rgba(255, 255, 255, 0.3);
+		box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+	}
+
+	@keyframes modalFadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes modalSlideIn {
+		from {
+			opacity: 0;
+			transform: translateY(-50px) scale(0.9);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
 	}
 </style>

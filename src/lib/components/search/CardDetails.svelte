@@ -1,25 +1,26 @@
 <script lang="ts">
 	import type { ScryfallCard } from '$lib/utils';
+	import { getCardImageUri } from '$lib/utils';
 	import LoadingSkeleton from '../common/LoadingSkeleton.svelte';
 	import { createEventDispatcher } from 'svelte';
-	
+
 	export let cardData: ScryfallCard | null = null;
 	export let loading: boolean = false;
 	export let addedToCollection: boolean = false;
 	export let addMessage: string = '';
-	
+
 	const dispatch = createEventDispatcher();
-	
+
 	function handleAddCard(quantity: number) {
 		if (cardData) {
 			dispatch('addToCollection', { card: cardData, quantity });
 		}
 	}
-	
+
 	function handleImageClick() {
 		if (cardData) {
 			dispatch('openImageModal', {
-				src: cardData.image_uris?.large || cardData.image_uris?.normal || '',
+				src: getCardImageUri(cardData, 'large') || getCardImageUri(cardData, 'normal') || '',
 				name: cardData.name
 			});
 		}
@@ -42,9 +43,9 @@
 				title="Click to enlarge"
 				aria-label="View larger image of {cardData.name}"
 			>
-				<img 
-					src={cardData.image_uris?.normal} 
-					alt={cardData.name} 
+				<img
+					src={getCardImageUri(cardData, 'normal')}
+					alt={cardData.name}
 					class="card-image"
 				/>
 			</button>

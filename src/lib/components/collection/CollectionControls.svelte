@@ -2,11 +2,12 @@
 	export let colorFilter: string | null = null;
 	export let sortBy: string = 'value-desc';
 	export let searchFilter: string = '';
-	
+	export let favoritesOnly: boolean = false;
+
 	function setColorFilter(filter: string | null) {
 		colorFilter = filter;
 	}
-	
+
 	function clearColorFilter() {
 		colorFilter = null;
 	}
@@ -84,6 +85,15 @@
 			</button>
 		</div>
 	</div>
+	<div class="favorites-filter-section">
+		<button
+			class="favorites-filter-btn {favoritesOnly ? 'active' : ''}"
+			on:click={() => favoritesOnly = !favoritesOnly}
+			title={favoritesOnly ? 'Show all cards' : 'Show only favorites'}
+		>
+			{favoritesOnly ? '⭐ Favorites Only' : '☆ Show Favorites'}
+		</button>
+	</div>
 	<div class="sort-section">
 		<label for="sort-select" class="sort-label">Sort by:</label>
 		<select id="sort-select" bind:value={sortBy} class="sort-dropdown">
@@ -96,6 +106,7 @@
 			<option value="quantity-desc">📊 Quantity (Most First)</option>
 			<option value="quantity-asc">📊 Quantity (Least First)</option>
 			<option value="color-wubrg">🌈 Color (WUBRG Order)</option>
+			<option value="favorites-first">⭐ Favorites First</option>
 		</select>
 	</div>
 </div>
@@ -208,6 +219,36 @@
 
 	.color-filter-btn.active:hover {
 		background: linear-gradient(135deg, #d4bd3a 0%, #f7ea95 100%);
+	}
+
+	.favorites-filter-section {
+		margin: 0;
+	}
+
+	.favorites-filter-btn {
+		padding: 0.75rem 1.5rem;
+		font-size: 1rem;
+		border: 2px solid rgba(201, 176, 55, 0.5);
+		border-radius: 10px;
+		background: rgba(0, 0, 0, 0.3);
+		color: rgba(201, 176, 55, 0.8);
+		cursor: pointer;
+		transition: all 0.3s ease;
+		backdrop-filter: blur(5px);
+		font-family: 'Cinzel', serif;
+		font-weight: 600;
+	}
+
+	.favorites-filter-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 5px 15px rgba(201, 176, 55, 0.3);
+	}
+
+	.favorites-filter-btn.active {
+		background: linear-gradient(135deg, rgba(201, 176, 55, 0.3), rgba(255, 215, 0, 0.3));
+		border-color: #ffd700;
+		color: #ffd700;
+		box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
 	}
 
 	.sort-label {

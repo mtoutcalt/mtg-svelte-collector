@@ -43,14 +43,14 @@ export const POST: RequestHandler = async ({ request }) => {
 			const insertStmt = db.prepare(`
 				INSERT INTO cards (
 					id, name, mana_cost, type_line, oracle_text, colors, color_identity,
-					image_normal, image_small, image_large,
+					image_normal, image_small, image_large, card_faces,
 					price_usd, price_usd_foil, price_eur, price_tix, quantity, fuzzy_match
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			`);
-			
+
 			insertStmt.run(
 				row.id, row.name, row.mana_cost, row.type_line, row.oracle_text, row.colors, row.color_identity,
-				row.image_normal, row.image_small, row.image_large,
+				row.image_normal, row.image_small, row.image_large, row.card_faces,
 				row.price_usd, row.price_usd_foil, row.price_eur, row.price_tix, row.quantity, row.fuzzy_match
 			);
 			
