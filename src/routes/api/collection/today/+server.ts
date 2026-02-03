@@ -7,9 +7,10 @@ export const GET: RequestHandler = async () => {
 	try {
 		const db = getDatabase();
 		// Get cards where created_at is today (comparing dates only, ignoring time)
+		// Use 'localtime' instead of 'now' to respect the local timezone
 		const stmt = db.prepare(`
 			SELECT * FROM cards
-			WHERE DATE(created_at) = DATE('now')
+			WHERE DATE(created_at) = DATE('now', 'localtime')
 			ORDER BY created_at DESC
 		`);
 		const rows = stmt.all() as CardRow[];
