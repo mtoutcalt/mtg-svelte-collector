@@ -25,6 +25,7 @@
 	import AnalyticsView from '$lib/components/analytics/AnalyticsView.svelte';
 	import DecksManager from '$lib/components/decks/DecksManager.svelte';
 	import ImageModal from '$lib/components/common/ImageModal.svelte';
+	import TodaysAdditions from '$lib/components/TodaysAdditions.svelte';
 	
 	// Import global styles
 	import '$lib/components/styles/globals.css';
@@ -282,7 +283,7 @@
 	/>
 
 	<!-- Card Details -->
-	<CardDetails 
+	<CardDetails
 		cardData={isCard(cardData) ? cardData : null}
 		{loading}
 		{addedToCollection}
@@ -295,6 +296,9 @@
 	{#if isError(cardData)}
 		<p class="error">{cardData.error}</p>
 	{/if}
+
+	<!-- Today's Additions -->
+	<TodaysAdditions on:openImageModal={handleOpenImageModal} />
 
 {:else if viewingCollection}
 	<!-- Collection View -->

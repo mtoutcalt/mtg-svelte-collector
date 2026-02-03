@@ -31,27 +31,27 @@ export const GET: RequestHandler = async () => {
 // POST /api/decks - Create a new deck
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		const { name, description } = await request.json();
-		
+		const { name, description, format } = await request.json();
+
 		if (!name || typeof name !== 'string' || name.trim().length === 0) {
 			return json({ error: 'Deck name is required' }, { status: 400 });
 		}
-		
+
 		const db = getDatabase();
 		const deckId = randomUUID();
-		
+
 		// Check if deck name already exists
 		const existingDeck = db.prepare('SELECT id FROM decks WHERE name = ?').get(name.trim());
 		if (existingDeck) {
 			return json({ error: 'A deck with this name already exists' }, { status: 400 });
 		}
-		
+
 		const insertDeck = db.prepare(`
-			INSERT INTO decks (id, name, description)
-			VALUES (?, ?, ?)
+			INSERT INTO decks (id, name, description, format)
+			VALUES (?, ?, ?, ?)
 		`);
-		
-		insertDeck.run(deckId, name.trim(), description || null);
+
+		insertDeck.run(deckId, name.trim(), description || null, format || null);
 		
 		const newDeck = db.prepare('SELECT * FROM decks WHERE id = ?').get(deckId) as DeckRow;
 		

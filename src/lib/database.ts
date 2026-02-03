@@ -130,6 +130,22 @@ function initializeDatabase(database: Database.Database): void {
 			database.exec('CREATE INDEX IF NOT EXISTS idx_cards_is_favorite ON cards(is_favorite)');
 		}
 
+		// Check if format column exists in decks table, if not add it for deck format tracking
+		const decksColumnInfo = database.prepare("PRAGMA table_info(decks)").all() as Array<{name: string}>;
+		const hasFormatColumn = decksColumnInfo.some(col => col.name === 'format');
+
+		if (!hasFormatColumn) {
+			database.exec('ALTER TABLE decks ADD COLUMN format TEXT');
+		}
+
+		// Check if is_sideboard column exists in deck_cards table
+		const deckCardsColumnInfo = database.prepare("PRAGMA table_info(deck_cards)").all() as Array<{name: string}>;
+		const hasSideboardColumn = deckCardsColumnInfo.some(col => col.name === 'is_sideboard');
+
+		if (!hasSideboardColumn) {
+			database.exec('ALTER TABLE deck_cards ADD COLUMN is_sideboard INTEGER DEFAULT 0');
+		}
+
 		createIndexes.forEach(indexQuery => database.exec(indexQuery));
 		
 		// Create triggers to automatically update the updated_at timestamp
@@ -165,6 +181,7 @@ export interface DeckRow {
 	id: string;
 	name: string;
 	description: string | null;
+	format: string | null;
 	created_at: string;
 	updated_at: string;
 }
@@ -174,6 +191,7 @@ export interface DeckCardRow {
 	deck_id: string;
 	card_id: string;
 	quantity: number;
+	is_sideboard: number;
 	created_at: string;
 }
 

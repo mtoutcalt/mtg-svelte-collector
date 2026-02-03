@@ -3,16 +3,18 @@
 	import CreateDeckForm from './CreateDeckForm.svelte';
 	import DeckList from './DeckList.svelte';
 	import DeckView from './DeckView.svelte';
-	
+	import DeckImporter from '$lib/components/DeckImporter.svelte';
+
 	export let showDecks: boolean = false;
-	
+
 	const dispatch = createEventDispatcher();
-	
+
 	let decks: any[] = [];
 	let selectedDeck: any = null;
 	let loading = false;
 	let creating = false;
 	let viewingDeck = false;
+	let importingDeck = false;
 	
 	onMount(() => {
 		if (showDecks) {
@@ -111,6 +113,12 @@
 	function backToDecks() {
 		viewingDeck = false;
 		selectedDeck = null;
+		importingDeck = false;
+	}
+
+	function toggleImportDeck() {
+		importingDeck = !importingDeck;
+		viewingDeck = false;
 	}
 	
 	function handleOpenImageModal(event: CustomEvent) {
@@ -204,23 +212,36 @@
 
 {#if showDecks}
 	<div class="decks-manager">
-		{#if !viewingDeck}
+		{#if !viewingDeck && !importingDeck}
 			<div class="decks-header">
 				<h2>🃏 Deck Builder</h2>
 				<p>Create and manage your Magic: The Gathering decks</p>
 			</div>
-			
-			<CreateDeckForm 
+
+			<div class="action-buttons">
+				<button class="import-deck-button" on:click={toggleImportDeck}>
+					📋 Import Pro Deck
+				</button>
+			</div>
+
+			<CreateDeckForm
 				{creating}
 				on:createDeck={createDeck}
 			/>
-			
-			<DeckList 
+
+			<DeckList
 				{decks}
 				{loading}
 				on:selectDeck={selectDeck}
 				on:deleteDeck={deleteDeck}
 			/>
+		{:else if importingDeck}
+			<div class="back-button-container">
+				<button class="back-button" on:click={backToDecks}>
+					← Back to Decks
+				</button>
+			</div>
+			<DeckImporter />
 		{:else}
 			<DeckView
 				deck={selectedDeck}
@@ -260,12 +281,56 @@
 		font-size: 1.2rem;
 		margin: 0;
 	}
-	
+
+	.action-buttons {
+		display: flex;
+		justify-content: center;
+		margin-bottom: 2rem;
+	}
+
+	.import-deck-button {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+		color: white;
+		border: none;
+		padding: 1rem 2rem;
+		border-radius: 8px;
+		cursor: pointer;
+		font-size: 1rem;
+		font-weight: 600;
+		transition: transform 0.2s, box-shadow 0.2s;
+		box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+	}
+
+	.import-deck-button:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+	}
+
+	.back-button-container {
+		margin-bottom: 1.5rem;
+	}
+
+	.back-button {
+		background: rgba(232, 233, 237, 0.1);
+		color: #e8e9ed;
+		border: 1px solid rgba(232, 233, 237, 0.2);
+		padding: 0.75rem 1.5rem;
+		border-radius: 6px;
+		cursor: pointer;
+		font-size: 0.95rem;
+		transition: all 0.2s;
+	}
+
+	.back-button:hover {
+		background: rgba(232, 233, 237, 0.15);
+		border-color: rgba(232, 233, 237, 0.3);
+	}
+
 	@media (max-width: 768px) {
 		.decks-header h2 {
 			font-size: 2rem;
 		}
-		
+
 		.decks-header p {
 			font-size: 1rem;
 		}

@@ -6,42 +6,46 @@ import type { RequestHandler } from './$types';
 export const POST: RequestHandler = async ({ params, request }) => {
 	try {
 		const { id: deckId } = params;
-		const { cardId, quantity = 1 } = await request.json();
-		
+		const { cardId, quantity = 1, isSideboard = false } = await request.json();
+
 		if (!cardId || typeof cardId !== 'string') {
 			return json({ error: 'Card ID is required' }, { status: 400 });
 		}
-		
+
 		if (!Number.isInteger(quantity) || quantity < 1) {
 			return json({ error: 'Quantity must be a positive integer' }, { status: 400 });
 		}
-		
+
 		const db = getDatabase();
-		
+
 		// Check if deck exists
 		const deck = db.prepare('SELECT id FROM decks WHERE id = ?').get(deckId);
 		if (!deck) {
 			return json({ error: 'Deck not found' }, { status: 404 });
 		}
-		
-		// Check if card exists in collection
+
+		// Check if card exists in collection (but don't require it)
 		const card = db.prepare('SELECT id FROM cards WHERE id = ?').get(cardId);
 		if (!card) {
-			return json({ error: 'Card not found in collection' }, { status: 404 });
+			// Card doesn't exist in collection yet - this is okay for deck imports
+			// The card data should have been added by the import process
+			console.warn(`Card ${cardId} not in collection but adding to deck anyway`);
 		}
-		
-		// Check if card is already in deck
-		const existingDeckCard = db.prepare('SELECT quantity FROM deck_cards WHERE deck_id = ? AND card_id = ?').get(deckId, cardId) as { quantity: number } | undefined;
-		
+
+		// Check if card is already in deck (with same sideboard status)
+		const existingDeckCard = db
+			.prepare('SELECT quantity FROM deck_cards WHERE deck_id = ? AND card_id = ? AND is_sideboard = ?')
+			.get(deckId, cardId, isSideboard ? 1 : 0) as { quantity: number } | undefined;
+
 		if (existingDeckCard) {
 			// Update quantity
 			const updateQuantity = db.prepare(`
-				UPDATE deck_cards 
+				UPDATE deck_cards
 				SET quantity = quantity + ?
-				WHERE deck_id = ? AND card_id = ?
+				WHERE deck_id = ? AND card_id = ? AND is_sideboard = ?
 			`);
-			updateQuantity.run(quantity, deckId, cardId);
-			
+			updateQuantity.run(quantity, deckId, cardId, isSideboard ? 1 : 0);
+
 			return json({
 				success: true,
 				message: `Added ${quantity} more copies to deck`,
@@ -50,11 +54,11 @@ export const POST: RequestHandler = async ({ params, request }) => {
 		} else {
 			// Add new card to deck
 			const insertDeckCard = db.prepare(`
-				INSERT INTO deck_cards (deck_id, card_id, quantity)
-				VALUES (?, ?, ?)
+				INSERT INTO deck_cards (deck_id, card_id, quantity, is_sideboard)
+				VALUES (?, ?, ?, ?)
 			`);
-			insertDeckCard.run(deckId, cardId, quantity);
-			
+			insertDeckCard.run(deckId, cardId, quantity, isSideboard ? 1 : 0);
+
 			return json({
 				success: true,
 				message: `Added ${quantity} copy/copies to deck`,
