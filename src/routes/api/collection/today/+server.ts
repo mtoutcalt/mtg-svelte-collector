@@ -8,9 +8,11 @@ export const GET: RequestHandler = async () => {
 		const db = getDatabase();
 		// Get cards where created_at is today (comparing dates only, ignoring time)
 		// Use 'localtime' instead of 'now' to respect the local timezone
+		// Exclude cards with quantity 0 (cards imported from deck lists but not owned)
 		const stmt = db.prepare(`
 			SELECT * FROM cards
 			WHERE DATE(created_at) = DATE('now', 'localtime')
+			AND quantity > 0
 			ORDER BY created_at DESC
 		`);
 		const rows = stmt.all() as CardRow[];
