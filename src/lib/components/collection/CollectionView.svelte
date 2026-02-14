@@ -10,6 +10,8 @@
 	export let sortBy: string = 'value-desc';
 	export let searchFilter: string = '';
 	export let favoritesOnly: boolean = false;
+	export let bannedOnly: boolean = false;
+	export let restrictedOnly: boolean = false;
 
 	// Declare the sorted collection variable
 	let sortedCollection: ScryfallCard[] = [];
@@ -74,11 +76,27 @@
 		return card.isFavorite === true;
 	}
 
+	function matchesBannedFilter(card: ScryfallCard, bannedFilter = bannedOnly): boolean {
+		if (!bannedFilter) return true;
+		if (!card.legalities) return false;
+		// Check if card is banned in any format
+		return Object.values(card.legalities).some(status => status === 'banned');
+	}
+
+	function matchesRestrictedFilter(card: ScryfallCard, restrictedFilter = restrictedOnly): boolean {
+		if (!restrictedFilter) return true;
+		if (!card.legalities) return false;
+		// Check if card is restricted in any format
+		return Object.values(card.legalities).some(status => status === 'restricted');
+	}
+
 	function getFilteredCollection(): ScryfallCard[] {
 		return collection.filter(card =>
 			matchesColorFilter(card, colorFilter) &&
 			matchesSearchFilter(card, searchFilter) &&
-			matchesFavoritesFilter(card, favoritesOnly)
+			matchesFavoritesFilter(card, favoritesOnly) &&
+			matchesBannedFilter(card, bannedOnly) &&
+			matchesRestrictedFilter(card, restrictedOnly)
 		);
 	}
 
@@ -98,12 +116,14 @@
 		return collection.length;
 	}
 
-	function getSortedCollection(col = collection, colorF = colorFilter, search = searchFilter, sort = sortBy, favFilter = favoritesOnly): ScryfallCard[] {
+	function getSortedCollection(col = collection, colorF = colorFilter, search = searchFilter, sort = sortBy, favFilter = favoritesOnly, bannedFilter = bannedOnly, restrictedFilter = restrictedOnly): ScryfallCard[] {
 		// First apply all filters, then sort
 		const filtered = col.filter(card =>
 			matchesColorFilter(card, colorF) &&
 			matchesSearchFilter(card, search) &&
-			matchesFavoritesFilter(card, favFilter)
+			matchesFavoritesFilter(card, favFilter) &&
+			matchesBannedFilter(card, bannedFilter) &&
+			matchesRestrictedFilter(card, restrictedFilter)
 		);
 		
 		switch (sort) {
@@ -206,7 +226,7 @@
 	}
 
 	// Reactive statement to ensure collection updates when filters change
-	$: sortedCollection = getSortedCollection(collection, colorFilter, searchFilter, sortBy, favoritesOnly);
+	$: sortedCollection = getSortedCollection(collection, colorFilter, searchFilter, sortBy, favoritesOnly, bannedOnly, restrictedOnly);
 </script>
 
 <div class="collection-view">
@@ -214,8 +234,8 @@
 		<div class="collection-info">
 			<h2>
 				My Collection
-				{#if colorFilter || searchFilter || favoritesOnly}
-					({getFilteredCardCount()} cards, {getFilteredUniqueCardCount()} unique{#if colorFilter} - {colorFilter} filter{/if}{#if searchFilter} - "{searchFilter}" search{/if}{#if favoritesOnly} - Favorites{/if})
+				{#if colorFilter || searchFilter || favoritesOnly || bannedOnly || restrictedOnly}
+					({getFilteredCardCount()} cards, {getFilteredUniqueCardCount()} unique{#if colorFilter} - {colorFilter} filter{/if}{#if searchFilter} - "{searchFilter}" search{/if}{#if favoritesOnly} - Favorites{/if}{#if bannedOnly} - Banned{/if}{#if restrictedOnly} - Restricted{/if})
 				{:else}
 					({getCollectionCount()} cards, {getUniqueCardCount()} unique)
 				{/if}
@@ -232,6 +252,8 @@
 				bind:sortBy={sortBy}
 				bind:searchFilter={searchFilter}
 				bind:favoritesOnly={favoritesOnly}
+				bind:bannedOnly={bannedOnly}
+				bind:restrictedOnly={restrictedOnly}
 			/>
 		{/if}
 	</div>

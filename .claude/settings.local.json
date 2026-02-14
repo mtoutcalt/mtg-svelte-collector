@@ -5,7 +5,9 @@
       "Bash(npm run build:*)",
       "Bash(npm run dev:*)",
       "Bash(npm install)",
-      "Bash(del package-lock.json)"
+      "Bash(del package-lock.json)",
+      "WebFetch(domain:scryfall.com)",
+      "WebFetch(domain:api.scryfall.com)"
     ],
     "deny": [],
     "ask": []

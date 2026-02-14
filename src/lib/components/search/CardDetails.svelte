@@ -55,7 +55,33 @@
 				<p><strong>Type:</strong> {cardData.type_line}</p>
 				<p><strong>Price:</strong> {cardData.prices?.usd ? `$${cardData.prices.usd}` : 'N/A'}</p>
 				<p><strong>Text:</strong> {cardData.oracle_text || 'No text'}</p>
-				
+
+				{#if cardData.legalities}
+					<div class="legalities">
+						<strong>Legalities:</strong>
+						<div class="legality-grid">
+							{#each [
+								{ format: 'Standard', key: 'standard' },
+								{ format: 'Modern', key: 'modern' },
+								{ format: 'Pioneer', key: 'pioneer' },
+								{ format: 'Legacy', key: 'legacy' },
+								{ format: 'Vintage', key: 'vintage' },
+								{ format: 'Commander', key: 'commander' },
+								{ format: 'Pauper', key: 'pauper' },
+								{ format: 'Historic', key: 'historic' }
+							] as { format, key }}
+								{@const status = cardData.legalities[key]}
+								{#if status === 'legal' || status === 'banned' || status === 'restricted'}
+									<div class="legality-item legality-{status}">
+										<span class="format-name">{format}</span>
+										<span class="status-badge">{status === 'legal' ? '✓' : status === 'banned' ? '✗' : 'R'}</span>
+									</div>
+								{/if}
+							{/each}
+						</div>
+					</div>
+				{/if}
+
 				<div class="card-actions">
 					<div class="quantity-controls">
 						<button 
@@ -184,7 +210,61 @@
 		color: #c9b037;
 		font-weight: 600;
 	}
-	
+
+	.legalities {
+		margin: 1.5rem 0;
+	}
+
+	.legality-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+		gap: 8px;
+		margin-top: 0.8rem;
+	}
+
+	.legality-item {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 6px 12px;
+		border-radius: 8px;
+		font-size: 0.9rem;
+		border: 1px solid;
+		transition: all 0.2s ease;
+	}
+
+	.legality-legal {
+		background: rgba(76, 175, 80, 0.15);
+		border-color: rgba(76, 175, 80, 0.4);
+		color: #81c784;
+	}
+
+	.legality-banned {
+		background: rgba(244, 67, 54, 0.15);
+		border-color: rgba(244, 67, 54, 0.4);
+		color: #e57373;
+	}
+
+	.legality-restricted {
+		background: rgba(255, 152, 0, 0.15);
+		border-color: rgba(255, 152, 0, 0.4);
+		color: #ffb74d;
+	}
+
+	.legality-item:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+	}
+
+	.format-name {
+		font-weight: 500;
+	}
+
+	.status-badge {
+		font-weight: 700;
+		font-size: 1rem;
+	}
+
 	.card-actions {
 		margin-top: 2rem;
 	}

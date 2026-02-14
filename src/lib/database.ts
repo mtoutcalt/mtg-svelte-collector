@@ -146,6 +146,13 @@ function initializeDatabase(database: Database.Database): void {
 			database.exec('ALTER TABLE deck_cards ADD COLUMN is_sideboard INTEGER DEFAULT 0');
 		}
 
+		// Check if legalities column exists, if not add it for format legality tracking
+		const hasLegalitiesColumn = columnInfo.some(col => col.name === 'legalities');
+
+		if (!hasLegalitiesColumn) {
+			database.exec('ALTER TABLE cards ADD COLUMN legalities TEXT');
+		}
+
 		createIndexes.forEach(indexQuery => database.exec(indexQuery));
 		
 		// Create triggers to automatically update the updated_at timestamp
@@ -217,6 +224,7 @@ export interface CardRow {
 	price_usd_12mo_ago: string | null;
 	price_last_updated: string | null;
 	is_favorite: number;
+	legalities: string | null;
 	created_at: string;
 	updated_at: string;
 }

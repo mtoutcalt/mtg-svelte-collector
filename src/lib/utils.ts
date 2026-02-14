@@ -28,6 +28,29 @@ export interface ScryfallCard {
 		eur?: string;
 		tix?: string;
 	};
+	legalities?: {
+		standard: string;
+		future: string;
+		historic: string;
+		timeless: string;
+		gladiator: string;
+		pioneer: string;
+		modern: string;
+		legacy: string;
+		pauper: string;
+		vintage: string;
+		penny: string;
+		commander: string;
+		oathbreaker: string;
+		standardbrawl: string;
+		brawl: string;
+		alchemy: string;
+		paupercommander: string;
+		duel: string;
+		oldschool: string;
+		premodern: string;
+		predh: string;
+	};
 	quantity?: number;
 	fuzzyMatch?: boolean;
 	priceHistory?: {

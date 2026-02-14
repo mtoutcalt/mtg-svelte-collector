@@ -3,6 +3,8 @@
 	export let sortBy: string = 'value-desc';
 	export let searchFilter: string = '';
 	export let favoritesOnly: boolean = false;
+	export let bannedOnly: boolean = false;
+	export let restrictedOnly: boolean = false;
 
 	function setColorFilter(filter: string | null) {
 		colorFilter = filter;
@@ -92,6 +94,22 @@
 			title={favoritesOnly ? 'Show all cards' : 'Show only favorites'}
 		>
 			{favoritesOnly ? '⭐ Favorites Only' : '☆ Show Favorites'}
+		</button>
+	</div>
+	<div class="legality-filter-section">
+		<button
+			class="legality-filter-btn banned {bannedOnly ? 'active' : ''}"
+			on:click={() => bannedOnly = !bannedOnly}
+			title={bannedOnly ? 'Show all cards' : 'Show only banned cards'}
+		>
+			{bannedOnly ? '✗ Banned Only' : '✗ Show Banned'}
+		</button>
+		<button
+			class="legality-filter-btn restricted {restrictedOnly ? 'active' : ''}"
+			on:click={() => restrictedOnly = !restrictedOnly}
+			title={restrictedOnly ? 'Show all cards' : 'Show only restricted cards'}
+		>
+			{restrictedOnly ? 'R Restricted Only' : 'R Show Restricted'}
 		</button>
 	</div>
 	<div class="sort-section">
@@ -249,6 +267,59 @@
 		border-color: #ffd700;
 		color: #ffd700;
 		box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+	}
+
+	.legality-filter-section {
+		display: flex;
+		gap: 10px;
+		margin: 0;
+	}
+
+	.legality-filter-btn {
+		padding: 0.75rem 1.5rem;
+		font-size: 1rem;
+		border: 2px solid;
+		border-radius: 10px;
+		background: rgba(0, 0, 0, 0.3);
+		cursor: pointer;
+		transition: all 0.3s ease;
+		backdrop-filter: blur(5px);
+		font-family: 'Cinzel', serif;
+		font-weight: 600;
+	}
+
+	.legality-filter-btn.banned {
+		border-color: rgba(244, 67, 54, 0.5);
+		color: rgba(244, 67, 54, 0.8);
+	}
+
+	.legality-filter-btn.banned:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 5px 15px rgba(244, 67, 54, 0.3);
+	}
+
+	.legality-filter-btn.banned.active {
+		background: linear-gradient(135deg, rgba(244, 67, 54, 0.3), rgba(244, 67, 54, 0.2));
+		border-color: #f44336;
+		color: #e57373;
+		box-shadow: 0 0 20px rgba(244, 67, 54, 0.4);
+	}
+
+	.legality-filter-btn.restricted {
+		border-color: rgba(255, 152, 0, 0.5);
+		color: rgba(255, 152, 0, 0.8);
+	}
+
+	.legality-filter-btn.restricted:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
+	}
+
+	.legality-filter-btn.restricted.active {
+		background: linear-gradient(135deg, rgba(255, 152, 0, 0.3), rgba(255, 152, 0, 0.2));
+		border-color: #ff9800;
+		color: #ffb74d;
+		box-shadow: 0 0 20px rgba(255, 152, 0, 0.4);
 	}
 
 	.sort-label {
