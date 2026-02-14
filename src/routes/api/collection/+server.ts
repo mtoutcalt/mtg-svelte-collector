@@ -44,16 +44,16 @@ export const POST: RequestHandler = async ({ request }) => {
 				INSERT INTO cards (
 					id, name, mana_cost, type_line, oracle_text, colors, color_identity,
 					image_normal, image_small, image_large, card_faces,
-					price_usd, price_usd_foil, price_eur, price_tix, quantity, fuzzy_match
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+					price_usd, price_usd_foil, price_eur, price_tix, legalities, quantity, fuzzy_match
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			`);
 
 			insertStmt.run(
 				row.id, row.name, row.mana_cost, row.type_line, row.oracle_text, row.colors, row.color_identity,
 				row.image_normal, row.image_small, row.image_large, row.card_faces,
-				row.price_usd, row.price_usd_foil, row.price_eur, row.price_tix, row.quantity, row.fuzzy_match
+				row.price_usd, row.price_usd_foil, row.price_eur, row.price_tix, row.legalities, row.quantity, row.fuzzy_match
 			);
-			
+
 			return json({ success: true, message: 'Card added to collection', quantity: row.quantity });
 		}
 	} catch (error) {

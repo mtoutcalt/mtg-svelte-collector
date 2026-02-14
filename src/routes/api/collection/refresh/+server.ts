@@ -3,13 +3,13 @@ import { getDatabase, scryfallCardToCardRow, type CardRow } from '$lib/database'
 import type { ScryfallCard } from '$lib/utils';
 import type { RequestHandler } from './$types';
 
-// POST /api/collection/refresh - Refresh cards with missing images from Scryfall
+// POST /api/collection/refresh - Refresh cards with missing images or legalities from Scryfall
 export const POST: RequestHandler = async () => {
 	try {
 		const db = getDatabase();
 
-		// Find all cards with missing images
-		const stmt = db.prepare('SELECT * FROM cards WHERE image_normal IS NULL');
+		// Find all cards with missing images or legalities
+		const stmt = db.prepare('SELECT * FROM cards WHERE image_normal IS NULL OR legalities IS NULL');
 		const rows = stmt.all() as CardRow[];
 
 		if (rows.length === 0) {
@@ -30,7 +30,8 @@ export const POST: RequestHandler = async () => {
 				mana_cost = ?,
 				oracle_text = ?,
 				colors = ?,
-				color_identity = ?
+				color_identity = ?,
+				legalities = ?
 			WHERE id = ?
 		`);
 
@@ -56,6 +57,7 @@ export const POST: RequestHandler = async () => {
 					updatedRow.oracle_text,
 					updatedRow.colors,
 					updatedRow.color_identity,
+					updatedRow.legalities,
 					row.id
 				);
 

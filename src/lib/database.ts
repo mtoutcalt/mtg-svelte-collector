@@ -250,6 +250,7 @@ export function cardRowToScryfallCard(row: CardRow): ScryfallCard {
 			eur: row.price_eur || undefined,
 			tix: row.price_tix || undefined
 		},
+		legalities: row.legalities ? JSON.parse(row.legalities) : undefined,
 		quantity: row.quantity,
 		fuzzyMatch: row.fuzzy_match === 1,
 		priceHistory: {
@@ -283,6 +284,7 @@ export function scryfallCardToCardRow(card: ScryfallCard): Omit<CardRow, 'create
 		price_usd_foil: card.prices?.usd_foil || null,
 		price_eur: card.prices?.eur || null,
 		price_tix: card.prices?.tix || null,
+		legalities: card.legalities ? JSON.stringify(card.legalities) : null,
 		quantity: card.quantity || 1,
 		fuzzy_match: card.fuzzyMatch ? 1 : 0,
 		price_usd_6mo_ago: card.priceHistory?.usd6moAgo || null,
