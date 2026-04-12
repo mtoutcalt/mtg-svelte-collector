@@ -4,6 +4,8 @@
 	import DeckList from './DeckList.svelte';
 	import DeckView from './DeckView.svelte';
 	import DeckImporter from '$lib/components/DeckImporter.svelte';
+	import ArchetypeGuide from './ArchetypeGuide.svelte';
+	import DeckSeeds from './DeckSeeds.svelte';
 
 	export let showDecks: boolean = false;
 
@@ -15,6 +17,8 @@
 	let creating = false;
 	let viewingDeck = false;
 	let importingDeck = false;
+	let viewingGuide = false;
+	let viewingSeeds = false;
 	
 	onMount(() => {
 		if (showDecks) {
@@ -114,11 +118,29 @@
 		viewingDeck = false;
 		selectedDeck = null;
 		importingDeck = false;
+		viewingGuide = false;
+		viewingSeeds = false;
 	}
 
 	function toggleImportDeck() {
 		importingDeck = !importingDeck;
 		viewingDeck = false;
+		viewingGuide = false;
+		viewingSeeds = false;
+	}
+
+	function toggleGuide() {
+		viewingGuide = !viewingGuide;
+		viewingDeck = false;
+		importingDeck = false;
+		viewingSeeds = false;
+	}
+
+	function toggleSeeds() {
+		viewingSeeds = !viewingSeeds;
+		viewingDeck = false;
+		importingDeck = false;
+		viewingGuide = false;
 	}
 	
 	function handleOpenImageModal(event: CustomEvent) {
@@ -212,7 +234,7 @@
 
 {#if showDecks}
 	<div class="decks-manager">
-		{#if !viewingDeck && !importingDeck}
+		{#if !viewingDeck && !importingDeck && !viewingGuide && !viewingSeeds}
 			<div class="decks-header">
 				<h2>🃏 Deck Builder</h2>
 				<p>Create and manage your Magic: The Gathering decks</p>
@@ -221,6 +243,12 @@
 			<div class="action-buttons">
 				<button class="import-deck-button" on:click={toggleImportDeck}>
 					📋 Import Pro Deck
+				</button>
+				<button class="seeds-button" on:click={toggleSeeds}>
+					🌱 Deck Seeds
+				</button>
+				<button class="guide-button" on:click={toggleGuide}>
+					📚 Deck Building Guide
 				</button>
 			</div>
 
@@ -242,6 +270,10 @@
 				</button>
 			</div>
 			<DeckImporter />
+		{:else if viewingGuide}
+			<ArchetypeGuide on:back={backToDecks} />
+		{:else if viewingSeeds}
+			<DeckSeeds on:back={backToDecks} />
 		{:else}
 			<DeckView
 				deck={selectedDeck}
@@ -304,6 +336,42 @@
 	.import-deck-button:hover {
 		transform: translateY(-2px);
 		box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+	}
+
+	.seeds-button {
+		background: linear-gradient(135deg, #2e7d32 0%, #66bb6a 100%);
+		color: white;
+		border: none;
+		padding: 1rem 2rem;
+		border-radius: 8px;
+		cursor: pointer;
+		font-size: 1rem;
+		font-weight: 600;
+		transition: transform 0.2s, box-shadow 0.2s;
+		box-shadow: 0 4px 15px rgba(46, 125, 50, 0.4);
+	}
+
+	.seeds-button:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 6px 20px rgba(46, 125, 50, 0.6);
+	}
+
+	.guide-button {
+		background: linear-gradient(135deg, #c9b037 0%, #f4e58c 100%);
+		color: #0a0e1a;
+		border: none;
+		padding: 1rem 2rem;
+		border-radius: 8px;
+		cursor: pointer;
+		font-size: 1rem;
+		font-weight: 600;
+		transition: transform 0.2s, box-shadow 0.2s;
+		box-shadow: 0 4px 15px rgba(201, 176, 55, 0.35);
+	}
+
+	.guide-button:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 6px 20px rgba(201, 176, 55, 0.55);
 	}
 
 	.back-button-container {

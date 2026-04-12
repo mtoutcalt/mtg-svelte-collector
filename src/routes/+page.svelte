@@ -26,6 +26,7 @@
 	import DecksManager from '$lib/components/decks/DecksManager.svelte';
 	import ImageModal from '$lib/components/common/ImageModal.svelte';
 	import TodaysAdditions from '$lib/components/TodaysAdditions.svelte';
+	import DailyLesson from '$lib/components/DailyLesson.svelte';
 	
 	// Import global styles
 	import '$lib/components/styles/globals.css';
@@ -296,6 +297,9 @@
 	{#if isError(cardData)}
 		<p class="error">{cardData.error}</p>
 	{/if}
+
+	<!-- Daily Lesson -->
+	<DailyLesson on:openImageModal={handleOpenImageModal} />
 
 	<!-- Today's Additions -->
 	<TodaysAdditions on:openImageModal={handleOpenImageModal} />
