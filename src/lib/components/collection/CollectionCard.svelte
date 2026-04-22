@@ -131,15 +131,23 @@
 	}
 	
 	function getValueTier(price: number): string {
-		if (price >= 50) return 'high-value';
-		if (price >= 10) return 'medium-value';
-		if (price >= 5) return 'low-value';
-		return 'standard';
+		if (price >= 50) return 'tier-legendary';
+		if (price >= 10) return 'tier-rare';
+		if (price >= 5) return 'tier-uncommon';
+		return 'tier-common';
+	}
+
+	function getValueLabel(price: number): string {
+		if (price >= 50) return 'Legendary';
+		if (price >= 10) return 'Rare';
+		if (price >= 5) return 'Uncommon';
+		return '';
 	}
 
 	$: displayQuantity = isDeckCard ? quantity : card.quantity || 1;
 	$: cardPrice = parseFloat(card.prices?.usd || '0');
 	$: valueTier = getValueTier(cardPrice);
+	$: valueLabel = getValueLabel(cardPrice);
 </script>
 
 <div class="collection-card {valueTier}">
@@ -156,7 +164,7 @@
 				class="collection-card-image"
 			/>
 		</button>
-		<div class="favorite-button-wrapper">
+		<div class="card-image-overlays">
 			<button
 				class="favorite-button {isFavoriteState ? 'active' : ''}"
 				on:click|stopPropagation={handleToggleFavorite}
@@ -166,6 +174,11 @@
 			>
 				{isFavoriteState ? '⭐' : '☆'}
 			</button>
+			{#if valueLabel}
+				<span class="value-badge {valueTier}" aria-label="Card value tier: {valueLabel}">
+					{valueLabel}
+				</span>
+			{/if}
 		</div>
 	</div>
 	<div class="collection-card-info">
@@ -337,11 +350,20 @@
 		width: 100%;
 	}
 
-	.favorite-button-wrapper {
+	.card-image-overlays {
 		position: absolute;
 		top: 10px;
 		left: 10px;
+		right: 10px;
 		z-index: 5;
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		pointer-events: none;
+	}
+
+	.card-image-overlays > * {
+		pointer-events: auto;
 	}
 
 	.favorite-button {
@@ -578,166 +600,90 @@
 		border-color: rgba(255, 255, 255, 0.3);
 	}
 
-	/* Value-based styling - More obvious effects */
-	.collection-card.low-value {
-		border: 3px solid #ffc107;
-		box-shadow: 0 8px 25px rgba(255, 193, 7, 0.5), 0 0 25px rgba(255, 193, 7, 0.3);
-		background: linear-gradient(135deg, rgba(255, 193, 7, 0.2) 0%, rgba(255, 193, 7, 0.1) 100%);
-		position: relative;
+	/* ── Value tier — elegant, no animation ── */
+
+	/* Uncommon ($5–$10): subtle amber top accent */
+	.collection-card.tier-uncommon {
+		border-color: rgba(255, 193, 7, 0.35);
 	}
 
-	.collection-card.low-value::before {
-		background: linear-gradient(90deg, transparent, #ffc107, transparent);
-		height: 3px;
+	.collection-card.tier-uncommon::before {
+		background: linear-gradient(90deg, transparent, rgba(255, 193, 7, 0.7), transparent);
 		transform: scaleX(1);
 	}
 
-	.collection-card.low-value:hover {
-		border-color: #ffb300;
-		box-shadow: 0 20px 50px rgba(255, 193, 7, 0.6), 0 0 40px rgba(255, 193, 7, 0.4);
-		transform: translateY(-10px) scale(1.03);
+	.collection-card.tier-uncommon .card-price {
+		color: #e8b84b;
 	}
 
-	.collection-card.low-value .collection-card-info .card-price {
-		color: #ffc107;
-		font-size: 1.1rem;
-		font-weight: 700;
-		text-shadow: 0 2px 8px rgba(255, 193, 7, 0.4);
+	/* Rare ($10–$50): purple top accent + subtle glow */
+	.collection-card.tier-rare {
+		border-color: rgba(157, 95, 209, 0.45);
+		box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4), 0 0 18px rgba(157, 95, 209, 0.12);
 	}
 
-	.collection-card.medium-value {
-		border: 4px solid #9c27b0;
-		box-shadow: 0 12px 35px rgba(156, 39, 176, 0.6), 0 0 35px rgba(156, 39, 176, 0.4);
-		background: linear-gradient(135deg, rgba(156, 39, 176, 0.25) 0%, rgba(156, 39, 176, 0.15) 100%);
-		position: relative;
-		animation: pulse-purple 4s ease-in-out infinite;
-	}
-
-	.collection-card.medium-value::before {
-		background: linear-gradient(90deg, transparent, #9c27b0, transparent);
-		height: 4px;
+	.collection-card.tier-rare::before {
+		background: linear-gradient(90deg, transparent, rgba(157, 95, 209, 0.8), transparent);
 		transform: scaleX(1);
 	}
 
-	.collection-card.medium-value::after {
-		content: '💎';
-		position: absolute;
-		top: 10px;
-		right: 10px;
-		font-size: 1.5rem;
-		z-index: 5;
-		animation: rotate 6s linear infinite;
+	.collection-card.tier-rare .card-price {
+		color: #b47de0;
 	}
 
-	.collection-card.medium-value:hover {
-		border-color: #ab47bc;
-		box-shadow: 0 25px 60px rgba(156, 39, 176, 0.7), 0 0 60px rgba(156, 39, 176, 0.5);
-		transform: translateY(-12px) scale(1.04);
+	/* Legendary (≥$50): gold top accent + warm glow */
+	.collection-card.tier-legendary {
+		border-color: rgba(201, 176, 55, 0.55);
+		box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45), 0 0 24px rgba(201, 176, 55, 0.14);
 	}
 
-	.collection-card.medium-value .collection-card-info .card-price {
-		color: #e91e63;
-		font-size: 1.2rem;
-		font-weight: 700;
-		text-shadow: 0 2px 10px rgba(156, 39, 176, 0.6);
-		background: linear-gradient(45deg, #9c27b0, #e91e63);
-		background-clip: text;
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-	}
-
-	.collection-card.high-value {
-		border: 5px solid #ffd700;
-		box-shadow: 0 15px 45px rgba(255, 215, 0, 0.8), 0 0 50px rgba(255, 215, 0, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.3);
-		background: linear-gradient(135deg, rgba(255, 215, 0, 0.3) 0%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 255, 255, 0.1) 100%);
-		position: relative;
-		animation: golden-glow 2s ease-in-out infinite alternate;
-		transform: scale(1.02);
-	}
-
-	.collection-card.high-value::before {
-		background: linear-gradient(90deg, transparent, #ffd700, #fff, #ffd700, transparent);
-		height: 5px;
+	.collection-card.tier-legendary::before {
+		background: linear-gradient(90deg, transparent, rgba(201, 176, 55, 0.9), transparent);
 		transform: scaleX(1);
-		animation: golden-sweep 3s ease-in-out infinite;
 	}
 
-	.collection-card.high-value::after {
-		content: '👑';
-		position: absolute;
-		top: 8px;
-		right: 8px;
-		font-size: 2rem;
-		z-index: 5;
-		animation: bounce 2s ease-in-out infinite;
-		filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.8));
+	.collection-card.tier-legendary:hover {
+		box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 36px rgba(201, 176, 55, 0.20);
+		border-color: rgba(201, 176, 55, 0.7);
 	}
 
-	.collection-card.high-value:hover {
-		border-color: #ffeb3b;
-		box-shadow: 0 30px 70px rgba(255, 215, 0, 0.9), 0 0 80px rgba(255, 215, 0, 0.7);
-		transform: translateY(-15px) scale(1.05);
+	.collection-card.tier-legendary .card-price {
+		color: #c9b037;
+		font-size: 1.05rem;
 	}
 
-	.collection-card.high-value .collection-card-info h3 {
-		color: #ffd700;
-		font-size: 1.3rem;
+	/* ── Value badge ── */
+	.value-badge {
+		display: inline-block;
+		padding: 3px 8px;
+		border-radius: 4px;
+		font-family: 'Cinzel', serif;
+		font-size: 0.65rem;
 		font-weight: 700;
-		text-shadow: 0 3px 15px rgba(255, 215, 0, 0.8);
-		background: linear-gradient(45deg, #ffd700, #fff, #ffd700);
-		background-clip: text;
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		animation: golden-text 3s ease-in-out infinite;
+		letter-spacing: 0.5px;
+		text-transform: uppercase;
+		backdrop-filter: blur(8px);
+		pointer-events: none;
+		user-select: none;
+		border: 1px solid;
 	}
 
-	.collection-card.high-value .collection-card-info .card-price {
-		color: #4caf50;
-		font-size: 1.3rem;
-		font-weight: 800;
-		text-shadow: 0 3px 15px rgba(76, 175, 80, 0.8);
-		background: linear-gradient(45deg, #4caf50, #8bc34a, #4caf50);
-		background-clip: text;
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		animation: price-glow 2.5s ease-in-out infinite alternate;
+	.value-badge.tier-uncommon {
+		background: rgba(255, 193, 7, 0.15);
+		border-color: rgba(255, 193, 7, 0.4);
+		color: #e8b84b;
 	}
 
-	@keyframes pulse-purple {
-		0%, 100% { box-shadow: 0 12px 35px rgba(156, 39, 176, 0.6), 0 0 35px rgba(156, 39, 176, 0.4); }
-		50% { box-shadow: 0 12px 35px rgba(156, 39, 176, 0.8), 0 0 45px rgba(156, 39, 176, 0.6); }
+	.value-badge.tier-rare {
+		background: rgba(157, 95, 209, 0.15);
+		border-color: rgba(157, 95, 209, 0.4);
+		color: #c09be0;
 	}
 
-	@keyframes golden-glow {
-		0% { box-shadow: 0 15px 45px rgba(255, 215, 0, 0.8), 0 0 50px rgba(255, 215, 0, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.3); }
-		100% { box-shadow: 0 20px 55px rgba(255, 215, 0, 1), 0 0 70px rgba(255, 215, 0, 0.8), inset 0 2px 0 rgba(255, 255, 255, 0.4); }
-	}
-
-	@keyframes golden-sweep {
-		0% { transform: translateX(-100%) scaleX(1); }
-		50% { transform: translateX(0) scaleX(1); }
-		100% { transform: translateX(100%) scaleX(1); }
-	}
-
-	@keyframes rotate {
-		from { transform: rotate(0deg); }
-		to { transform: rotate(360deg); }
-	}
-
-	@keyframes bounce {
-		0%, 20%, 50%, 80%, 100% { transform: translateY(0) scale(1); }
-		40% { transform: translateY(-8px) scale(1.1); }
-		60% { transform: translateY(-4px) scale(1.05); }
-	}
-
-	@keyframes golden-text {
-		0%, 100% { text-shadow: 0 3px 15px rgba(255, 215, 0, 0.8); }
-		50% { text-shadow: 0 5px 25px rgba(255, 215, 0, 1), 0 0 15px rgba(255, 255, 255, 0.5); }
-	}
-
-	@keyframes price-glow {
-		0% { text-shadow: 0 3px 15px rgba(76, 175, 80, 0.8); }
-		100% { text-shadow: 0 5px 25px rgba(76, 175, 80, 1), 0 0 20px rgba(76, 175, 80, 0.6); }
+	.value-badge.tier-legendary {
+		background: rgba(201, 176, 55, 0.15);
+		border-color: rgba(201, 176, 55, 0.45);
+		color: #dbc55a;
 	}
 
 	/* Price refresh section styles */

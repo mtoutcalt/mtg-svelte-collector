@@ -83,7 +83,7 @@
 {#if !isLoading && todaysCards.length > 0}
 	<section class="todays-additions">
 		<div class="section-header">
-			<h2 class="section-title">📅 Today's Additions</h2>
+			<h2 class="section-title">Today's Additions</h2>
 			<div class="section-stats">
 				<span class="stat">{todaysCards.length} {todaysCards.length === 1 ? 'card' : 'cards'}</span>
 				<span class="stat-separator">•</span>
@@ -119,11 +119,11 @@
 	.todays-additions {
 		margin: 2rem 0;
 		padding: 2rem;
-		background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(33, 150, 243, 0.05) 100%);
-		border: 2px solid rgba(33, 150, 243, 0.3);
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid rgba(201, 176, 55, 0.18);
 		border-radius: 20px;
 		backdrop-filter: blur(10px);
-		box-shadow: 0 8px 32px rgba(33, 150, 243, 0.2);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 	}
 
 	.section-header {
@@ -134,14 +134,10 @@
 	.section-title {
 		margin: 0 0 0.5rem 0;
 		font-family: 'Cinzel', serif;
-		font-size: 1.8rem;
+		font-size: 1.6rem;
 		font-weight: 700;
-		color: #2196F3;
-		text-shadow: 0 2px 15px rgba(33, 150, 243, 0.5);
-		background: linear-gradient(45deg, #2196F3, #64B5F6);
-		background-clip: text;
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
+		color: #c9b037;
+		text-shadow: 0 2px 12px rgba(201, 176, 55, 0.3);
 	}
 
 	.section-stats {

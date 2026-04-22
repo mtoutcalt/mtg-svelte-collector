@@ -62,7 +62,7 @@
 <div class="analytics-view">
 	<div class="analytics-header">
 		<div class="analytics-title-section">
-			<h2>📊 Portfolio Analytics</h2>
+			<h2>Portfolio Analytics</h2>
 			{#if analyticsData}
 				<div class="last-update-info">
 					<span class="update-text">Last updated: {updateInfo.lastUpdate}</span>
