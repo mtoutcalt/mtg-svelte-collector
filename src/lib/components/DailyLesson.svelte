@@ -245,21 +245,214 @@
 			title: 'Board Presence',
 			body: 'Having more creatures on the battlefield than your opponent is called "board presence." It lets you attack and block more effectively. One of the most important things to evaluate each turn is whether your board state is better, equal, or worse than your opponent\'s.',
 		},
+		{
+			category: 'Strategy',
+			categoryColor: '#e91e63',
+			title: 'Who\'s the Beatdown?',
+			body: 'In any matchup, one player is the aggressor ("the beatdown") and the other is the controller. Figuring out which role you\'re in is one of the most important skills in Magic. If you\'re the slower deck, defend and grind; if you\'re the faster deck, push damage before your opponent stabilizes. Misassigning your role loses games you should win.',
+		},
+		{
+			category: 'Strategy',
+			categoryColor: '#e91e63',
+			title: 'Play to Your Outs',
+			body: 'When you\'re losing, don\'t play for the most likely outcome — play for the line where you can still win, even if it\'s unlikely. If you only win by drawing a specific card or your opponent not having an answer, sequence your plays assuming that\'s the world you live in. Playing "safe" when you\'re behind just loses slower.',
+		},
+		{
+			category: 'Strategy',
+			categoryColor: '#e91e63',
+			title: 'Sandbagging Lands and Spells',
+			body: 'You don\'t have to play everything the moment you can. Holding a second copy of a creature back protects you from a board wipe. Keeping an extra land in hand can disguise what you\'re holding. Dumping your whole hand makes you predictable and vulnerable.',
+		},
+
+		// --- Mulligans ---
+		{
+			category: 'Mulligans',
+			categoryColor: '#00bcd4',
+			title: 'When to Mulligan',
+			body: 'A "keepable" opening hand can cast spells on time and has a realistic plan to affect the game. Hands with 0-1 lands or 6-7 lands are almost always mulligans. So are hands full of expensive cards you can\'t cast for many turns. A free re-draw is better than starting the game already behind.',
+		},
+		{
+			category: 'Mulligans',
+			categoryColor: '#00bcd4',
+			title: 'The London Mulligan',
+			body: 'When you mulligan, you draw a fresh 7 cards, then put a number of cards on the bottom equal to how many times you\'ve mulliganed. So your first mulligan still lets you see 7 and keep 6 — you pick the best 6 and bottom the worst. This makes aggressive mulliganing for a key card much safer than it used to be.',
+		},
+		{
+			category: 'Mulligans',
+			categoryColor: '#00bcd4',
+			title: 'Keep by Curve, Not Card Count',
+			body: 'A hand isn\'t good just because it has lands and spells — it\'s good if you can do something meaningful on the early turns. Three lands and three four-drops is a slow, clunky keep. Two lands with a one-drop, a two-drop, and a card-draw spell is often far stronger.',
+		},
+		{
+			category: 'Mulligans',
+			categoryColor: '#00bcd4',
+			title: 'Don\'t Keep "Hope" Hands',
+			body: 'A hand that only works if you draw exactly the right cards over the next few turns is a trap. "I\'ll keep this two-lander and just draw a third land" feels fine until you don\'t. Be honest about how many draws need to go right — if it\'s more than one or two, ship it.',
+		},
+
+		// --- Combat Math ---
+		{
+			category: 'Combat Math',
+			categoryColor: '#f44336',
+			title: 'Attacking Into Open Mana',
+			body: 'When your opponent has untapped lands, assume they have a trick or removal spell. Before attacking, ask: "If they have the obvious instant, do I still come out ahead?" Sometimes you attack anyway to apply pressure, but you should know the risk rather than walking into it blindly.',
+			scryfallQuery: 't:instant (o:"+2/+2" or o:"+3/+3") r:common -is:digital',
+		},
+		{
+			category: 'Combat Math',
+			categoryColor: '#f44336',
+			title: 'Profitable vs. Unprofitable Blocks',
+			body: 'A "profitable" block trades your cheaper creature for their more valuable one, or kills their attacker while yours survives. Blocking a 2/2 with your 4/4 just to prevent 2 damage is usually a bad trade unless that life matters. Always weigh what each creature is worth, not just the damage.',
+		},
+		{
+			category: 'Combat Math',
+			categoryColor: '#f44336',
+			title: 'Double Blocking',
+			body: 'You can block one attacker with multiple creatures. This lets you kill a big threat you couldn\'t handle one-on-one — but the attacker\'s controller chooses how to assign damage and may have a trick to pick off both blockers. Double block when killing the creature is worth the risk of a two-for-one.',
+		},
+		{
+			category: 'Combat Math',
+			categoryColor: '#f44336',
+			title: 'The Combat Trick Bluff',
+			body: 'You don\'t need to actually have a trick to benefit from one. Leaving a single mana open or hesitating before attacks can make a cautious opponent block badly or not at all. Conversely, recognizing when an opponent is bluffing — and calling it — wins games. Combat is as much psychology as math.',
+			scryfallQuery: 't:instant o:"target creature gets" r:common -is:digital',
+		},
+		{
+			category: 'Combat Math',
+			categoryColor: '#f44336',
+			title: 'Count Lethal Before You Act',
+			body: 'Every turn, add up the damage you can deal this turn if your opponent doesn\'t block. Knowing your exact "clock" — how many turns until they\'re dead — tells you whether to race, hold back, or take a risk. Many games are lost by players who didn\'t notice they had lethal on the board.',
+		},
+
+		// --- Sequencing ---
+		{
+			category: 'Sequencing',
+			categoryColor: '#3f51b5',
+			title: 'Lead With the Right Land',
+			body: 'If your lands enter tapped or produce different colors, the order you play them matters. Play tapped lands on turns you have nothing to do anyway. Lead with the color you need now and hold flexible lands so you keep your options open for what you might draw.',
+		},
+		{
+			category: 'Sequencing',
+			categoryColor: '#3f51b5',
+			title: 'Hold Up Interaction',
+			body: 'You don\'t always want to spend all your mana on your own turn. Passing with mana open lets you cast instants — removal, counters, or tricks — in response to what your opponent does. Sometimes the strongest play is to do nothing and stay reactive.',
+			scryfallQuery: 'o:"counter target spell" t:instant r:common -is:digital',
+		},
+		{
+			category: 'Sequencing',
+			categoryColor: '#3f51b5',
+			title: 'Play Around the Board Wipe',
+			body: 'When you\'re ahead on board, resist the urge to dump every creature. If your opponent could have a "destroy all creatures" spell, commit just enough to keep the pressure on while holding reinforcements. Overextending into a wipe can turn a winning game into a loss in one card.',
+			scryfallQuery: 'o:"destroy all creatures" r:rare -is:digital',
+		},
+		{
+			category: 'Sequencing',
+			categoryColor: '#3f51b5',
+			title: 'Bait the Counterspell',
+			body: 'Against a control deck, lead with your second-best threat before your best one. If they counter it, your real haymaker resolves later. If they let it through, you got value. Forcing your opponent to make a bad choice with your sequencing is a core skill.',
+		},
+		{
+			category: 'Sequencing',
+			categoryColor: '#3f51b5',
+			title: 'Cast Removal at the Best Moment',
+			body: 'Instant-speed removal is most efficient when you wait. Kill a creature in response to it being targeted by a pump spell, or after your opponent invests mana equipping it. Killing it on your own turn "just because" often wastes the flexibility you paid for.',
+			scryfallQuery: 'o:"destroy target creature" t:instant r:common -is:digital',
+		},
+
+		// --- Resource Management ---
+		{
+			category: 'Resource Management',
+			categoryColor: '#009688',
+			title: 'The Two-for-One',
+			body: 'A "two-for-one" is when one of your cards deals with two of your opponent\'s (or generates two cards of value). Every two-for-one you land puts you a card ahead, and card advantage compounds. Conversely, avoid letting a single removal spell or trick blow you out for two cards.',
+		},
+		{
+			category: 'Resource Management',
+			categoryColor: '#009688',
+			title: 'Don\'t Over-Commit',
+			body: 'Every creature you add to the board is a resource at risk. Against decks with sweepers or strong blockers, deploying threats one at a time forces your opponent to answer each individually. Spending your whole hand to "go fast" only works if you can actually close the game before they recover.',
+		},
+		{
+			category: 'Resource Management',
+			categoryColor: '#009688',
+			title: 'Life Is a Resource',
+			body: 'Your 20 life isn\'t something to protect at all costs — it\'s a resource you can spend. Taking a few points of damage to keep a creature back for a better block, or to play a painful land untapped, is often correct. Only the last point of life actually matters.',
+		},
+		{
+			category: 'Resource Management',
+			categoryColor: '#009688',
+			title: 'Save Removal for the Right Target',
+			body: 'It\'s tempting to kill the first creature your opponent plays, but premium removal is precious. Holding it for their most dangerous threat — the bomb, the equipped creature, the engine — usually wins more games than trading it for a small early creature you could have blocked.',
+		},
+
+		// --- Sideboarding ---
+		{
+			category: 'Sideboarding',
+			categoryColor: '#607d8b',
+			title: 'What a Sideboard Is',
+			body: 'In best-of-three matches, you have a 15-card sideboard. After game one, you may swap cards between your main deck and sideboard to tune for the specific opponent. This lets you bring in answers to their strategy and cut cards that are weak in the matchup.',
+		},
+		{
+			category: 'Sideboarding',
+			categoryColor: '#607d8b',
+			title: 'Cut Your Worst Cards First',
+			body: 'Good sideboarding starts with knowing which of your cards are weakest against this opponent — not just which sideboard cards look exciting. Removal with no good targets, or slow cards against an aggressive deck, are the first to go. Take out dead weight, then add answers.',
+		},
+		{
+			category: 'Sideboarding',
+			categoryColor: '#607d8b',
+			title: 'Don\'t Over-Sideboard',
+			body: 'Swapping in 8 cards can wreck the consistency and mana curve that made your deck work. Most of the time, changing 2-5 cards is plenty. A few targeted answers usually beat a wholesale rebuild that leaves you with a clunky, untested 60.',
+		},
 	];
 
-	let tip: Tip = tips[0];
+	let currentIndex = 0;
 	let exampleCard: any = null;
 	let cardLoading = false;
 	let imageError = false;
 
-	function getTodaysTip(): Tip {
+	$: tip = tips[currentIndex];
+
+	function getTodaysIndex(): number {
 		const today = new Date();
 		// Produce a stable number for today: e.g. 20260412
 		const seed =
 			today.getFullYear() * 10000 +
 			(today.getMonth() + 1) * 100 +
 			today.getDate();
-		return tips[seed % tips.length];
+		return seed % tips.length;
+	}
+
+	async function loadExampleCard(t: Tip) {
+		exampleCard = null;
+		imageError = false;
+		if (!t.scryfallQuery) return;
+
+		cardLoading = true;
+		try {
+			const res = await fetch(
+				`https://api.scryfall.com/cards/random?q=${encodeURIComponent(t.scryfallQuery)}`
+			);
+			if (res.ok) {
+				exampleCard = await res.json();
+			}
+		} catch (_) {
+			// silently fail — card example is optional
+		}
+		cardLoading = false;
+	}
+
+	function showTip(index: number) {
+		currentIndex = ((index % tips.length) + tips.length) % tips.length;
+		loadExampleCard(tips[currentIndex]);
+	}
+
+	function nextTip() {
+		showTip(currentIndex + 1);
+	}
+
+	function prevTip() {
+		showTip(currentIndex - 1);
 	}
 
 	function getCardImage(card: any): string | null {
@@ -276,23 +469,8 @@
 		}
 	}
 
-	onMount(async () => {
-		tip = getTodaysTip();
-
-		if (tip.scryfallQuery) {
-			cardLoading = true;
-			try {
-				const res = await fetch(
-					`https://api.scryfall.com/cards/random?q=${encodeURIComponent(tip.scryfallQuery)}`
-				);
-				if (res.ok) {
-					exampleCard = await res.json();
-				}
-			} catch (_) {
-				// silently fail — card example is optional
-			}
-			cardLoading = false;
-		}
+	onMount(() => {
+		showTip(getTodaysIndex());
 	});
 </script>
 
@@ -332,6 +510,15 @@
 				{/if}
 			</div>
 		{/if}
+	</div>
+
+	<div class="lesson-nav">
+		<button class="nav-btn" on:click={prevTip} title="Previous tip">‹ Prev</button>
+		<button class="today-btn" on:click={() => showTip(getTodaysIndex())} title="Back to today's tip">
+			Today
+		</button>
+		<span class="nav-counter">{currentIndex + 1} / {tips.length}</span>
+		<button class="nav-btn" on:click={nextTip} title="Next tip">Next ›</button>
 	</div>
 </section>
 
@@ -471,6 +658,62 @@
 		justify-content: center;
 		font-size: 0.8rem;
 		color: rgba(232, 233, 237, 0.4);
+	}
+
+	.lesson-nav {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.75rem;
+		margin-top: 1.75rem;
+		padding-top: 1.25rem;
+		border-top: 1px solid rgba(201, 176, 55, 0.2);
+	}
+
+	.nav-btn,
+	.today-btn {
+		font-family: 'Cinzel', serif;
+		font-size: 0.85rem;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		color: #f4e58c;
+		background: rgba(201, 176, 55, 0.1);
+		border: 1px solid rgba(201, 176, 55, 0.35);
+		padding: 0.45rem 1rem;
+		border-radius: 8px;
+		cursor: pointer;
+		transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+	}
+
+	.nav-btn:hover,
+	.today-btn:hover {
+		background: rgba(201, 176, 55, 0.22);
+		transform: translateY(-2px);
+		box-shadow: 0 4px 14px rgba(201, 176, 55, 0.2);
+	}
+
+	.nav-btn:active,
+	.today-btn:active {
+		transform: translateY(0);
+	}
+
+	.today-btn {
+		color: rgba(232, 233, 237, 0.7);
+		background: rgba(255, 255, 255, 0.04);
+		border-color: rgba(255, 255, 255, 0.15);
+	}
+
+	.today-btn:hover {
+		background: rgba(255, 255, 255, 0.09);
+		box-shadow: none;
+	}
+
+	.nav-counter {
+		font-family: 'Crimson Text', serif;
+		font-size: 0.9rem;
+		color: rgba(232, 233, 237, 0.55);
+		min-width: 3.5rem;
+		text-align: center;
 	}
 
 	.loading-pulse {

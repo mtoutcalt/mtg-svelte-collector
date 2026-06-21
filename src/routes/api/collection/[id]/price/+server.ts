@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import Database from 'better-sqlite3';
 import path from 'path';
+import { scryfallFetch } from '$lib/server/scryfall';
 
 const dbPath = path.join(process.cwd(), 'data', 'collection.db');
 
@@ -20,7 +21,7 @@ export const PUT: RequestHandler = async ({ params }) => {
 		}
 
 		// Fetch latest price from Scryfall API
-		const scryfallResponse = await fetch(`https://api.scryfall.com/cards/${card.id}`);
+		const scryfallResponse = await scryfallFetch(`https://api.scryfall.com/cards/${card.id}`);
 
 		if (!scryfallResponse.ok) {
 			db.close();

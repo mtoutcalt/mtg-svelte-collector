@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { getDatabase, cardRowToScryfallCard, type CardRow } from '$lib/database';
 import type { RequestHandler } from './$types';
+import { scryfallFetch } from '$lib/server/scryfall';
 
 // GET /api/prices - Get current prices for all cards in collection
 export const GET: RequestHandler = async () => {

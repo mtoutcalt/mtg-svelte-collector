@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { getDatabase, scryfallCardToCardRow, type CardRow } from '$lib/database';
 import type { ScryfallCard } from '$lib/utils';
 import type { RequestHandler } from './$types';
+import { scryfallFetch } from '$lib/server/scryfall';
 
 // POST /api/collection/refresh - Refresh cards with missing images or legalities from Scryfall
 export const POST: RequestHandler = async () => {
@@ -38,7 +39,7 @@ export const POST: RequestHandler = async () => {
 		// Fetch fresh data from Scryfall for each card
 		for (const row of rows) {
 			try {
-				const response = await fetch(`https://api.scryfall.com/cards/${row.id}`);
+				const response = await scryfallFetch(`https://api.scryfall.com/cards/${row.id}`);
 
 				if (!response.ok) {
 					console.error(`Failed to fetch card ${row.name} (${row.id})`);

@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { parseDeckList, validateDeck } from '$lib/deckParser';
 import type { ScryfallCard } from '$lib/utils';
+import { scryfallFetch } from '$lib/server/scryfall';
 
 export const POST: RequestHandler = async ({ request }) => {
 	const { deckText, deckName, format } = await request.json();
@@ -82,7 +83,7 @@ async function fetchCardsFromScryfall(cardNames: string[]): Promise<Map<string, 
 
 	for (const chunk of chunks) {
 		try {
-			const response = await fetch('https://api.scryfall.com/cards/collection', {
+			const response = await scryfallFetch('https://api.scryfall.com/cards/collection', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ identifiers: chunk })
