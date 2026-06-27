@@ -6,6 +6,16 @@ export interface ScryfallCard {
 	oracle_text?: string;
 	colors?: string[];
 	color_identity?: string[];
+	// Printing-specific fields (used by the version picker to distinguish
+	// between different arts/sets of the same card)
+	set?: string;
+	set_name?: string;
+	collector_number?: string;
+	rarity?: string;
+	released_at?: string;
+	frame_effects?: string[];
+	promo_types?: string[];
+	prints_search_uri?: string;
 	image_uris?: {
 		normal: string;
 		small: string;
@@ -96,6 +106,44 @@ export function formatCurrency(value: number): string {
 		style: 'currency',
 		currency: 'USD'
 	}).format(value);
+}
+
+// Build a short, human-friendly list of any special treatments on a printing
+// (e.g. "Showcase", "Extended Art", "Borderless") so the user can recognize
+// a different art style at a glance. Returns [] for an ordinary printing.
+export function getPrintingTreatments(card: ScryfallCard): string[] {
+	const labels: Record<string, string> = {
+		showcase: 'Showcase',
+		extendedart: 'Extended Art',
+		inverted: 'Inverted',
+		etched: 'Etched',
+		legendary: 'Legendary Frame'
+	};
+
+	const treatments: string[] = [];
+
+	for (const effect of card.frame_effects ?? []) {
+		treatments.push(labels[effect] ?? effect);
+	}
+
+	// Borderless is exposed as a border_color, not a frame effect
+	if ((card as { border_color?: string }).border_color === 'borderless') {
+		treatments.push('Borderless');
+	}
+
+	// A handful of promo types are worth surfacing as a distinct "style"
+	const promoLabels: Record<string, string> = {
+		boosterfun: 'Booster Fun',
+		galaxyfoil: 'Galaxy Foil',
+		surgefoil: 'Surge Foil',
+		textured: 'Textured',
+		serialized: 'Serialized'
+	};
+	for (const promo of card.promo_types ?? []) {
+		if (promoLabels[promo]) treatments.push(promoLabels[promo]);
+	}
+
+	return [...new Set(treatments)];
 }
 
 // Helper function to get card image URI (handles double-faced cards)

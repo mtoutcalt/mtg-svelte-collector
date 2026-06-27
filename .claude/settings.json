@@ -1,7 +1,14 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx svelte-check *)"
+      "Bash(npx svelte-check *)",
+      "Bash(node ./node_modules/@sveltejs/kit/svelte-kit.js sync)",
+      "Bash(node ./node_modules/svelte-check/bin/svelte-check.js --tsconfig ./tsconfig.json)",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/svelte-check/package.json'\\).bin\\)\")",
+      "Bash(node ./node_modules/svelte-check/dist/src/index.js --tsconfig ./tsconfig.json)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\mtout\\.claude\\projects\\c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector\\memory"
     ]
   }
 }

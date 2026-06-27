@@ -145,6 +145,14 @@
 		searchResults = [];
 	}
 
+	// User picked a specific printing/art from the version picker — make it the
+	// active card so its image, price and "Add" buttons all reflect that version.
+	function handleSelectVersion(event: CustomEvent<ScryfallCard>) {
+		cardData = event.detail;
+		addedToCollection = false;
+		addMessage = '';
+	}
+
 	function handleAddToCollection(event: CustomEvent) {
 		const { card, quantity } = event.detail;
 		addToCollection(card, quantity);
@@ -291,6 +299,7 @@
 		{addMessage}
 		on:addToCollection={handleAddToCollection}
 		on:openImageModal={handleOpenImageModal}
+		on:selectVersion={handleSelectVersion}
 	/>
 
 	<!-- Error Display -->

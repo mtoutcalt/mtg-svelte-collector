@@ -2,6 +2,7 @@
 	import type { ScryfallCard } from '$lib/utils';
 	import { getCardImageUri } from '$lib/utils';
 	import LoadingSkeleton from '../common/LoadingSkeleton.svelte';
+	import VersionPicker from './VersionPicker.svelte';
 	import { createEventDispatcher } from 'svelte';
 
 	export let cardData: ScryfallCard | null = null;
@@ -10,6 +11,16 @@
 	export let addMessage: string = '';
 
 	const dispatch = createEventDispatcher();
+
+	let showVersions: boolean = false;
+
+	// Collapse the version picker whenever the displayed card changes.
+	$: cardData?.id, (showVersions = false);
+
+	function handleSelectVersion(event: CustomEvent<ScryfallCard>) {
+		showVersions = false;
+		dispatch('selectVersion', event.detail);
+	}
 
 	function handleAddCard(quantity: number) {
 		if (cardData) {
@@ -102,9 +113,24 @@
 					{#if addedToCollection && addMessage}
 						<div class="add-message">{addMessage}</div>
 					{/if}
+					<button
+						class="versions-toggle"
+						on:click={() => (showVersions = !showVersions)}
+						aria-expanded={showVersions}
+					>
+						{showVersions ? 'Hide other versions' : '🎨 I have a different version / art'}
+					</button>
 				</div>
 			</div>
 		</div>
+
+		{#if showVersions}
+			<VersionPicker
+				card={cardData}
+				on:select={handleSelectVersion}
+				on:close={() => (showVersions = false)}
+			/>
+		{/if}
 	</div>
 {/if}
 
@@ -317,6 +343,27 @@
 		font-size: 0.9rem;
 		margin-top: 0.5rem;
 		font-weight: 600;
+	}
+
+	.versions-toggle {
+		margin-top: 1rem;
+		width: 100%;
+		padding: 10px 16px;
+		background: rgba(201, 176, 55, 0.08);
+		border: 1px solid rgba(201, 176, 55, 0.35);
+		border-radius: 12px;
+		color: #c9b037;
+		font-family: 'Cinzel', serif;
+		font-weight: 600;
+		font-size: 0.9rem;
+		cursor: pointer;
+		transition: all 0.25s ease;
+	}
+
+	.versions-toggle:hover {
+		background: rgba(201, 176, 55, 0.16);
+		border-color: rgba(201, 176, 55, 0.6);
+		transform: translateY(-1px);
 	}
 
 	@media (max-width: 768px) {
