@@ -153,6 +153,24 @@ function initializeDatabase(database: Database.Database): void {
 			database.exec('ALTER TABLE cards ADD COLUMN legalities TEXT');
 		}
 
+		// Price history table - one snapshot per price refresh, powers the price movers feature
+		const priceHistoryExisted = !!database.prepare(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'price_history'"
+		).get();
+
+		ensurePriceHistoryTable(database);
+
+		if (!priceHistoryExisted) {
+			// Seed a baseline snapshot for existing cards, dated at their last price update
+			// so the first real refresh after this migration produces meaningful movement
+			database.exec(`
+				INSERT INTO price_history (card_id, price_usd, recorded_at)
+				SELECT id, price_usd, COALESCE(datetime(price_last_updated), CURRENT_TIMESTAMP)
+				FROM cards
+				WHERE price_usd IS NOT NULL
+			`);
+		}
+
 		createIndexes.forEach(indexQuery => database.exec(indexQuery));
 		
 		// Create triggers to automatically update the updated_at timestamp
@@ -170,6 +188,35 @@ function initializeDatabase(database: Database.Database): void {
 		console.error('Database initialization error:', error);
 		throw error;
 	}
+}
+
+// Some endpoints open their own connection to the db file instead of using
+// getDatabase(), so table creation must be callable on any connection.
+export function ensurePriceHistoryTable(database: Database.Database): void {
+	database.exec(`
+		CREATE TABLE IF NOT EXISTS price_history (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			card_id TEXT NOT NULL,
+			price_usd TEXT NOT NULL,
+			recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE
+		)
+	`);
+	database.exec(
+		'CREATE INDEX IF NOT EXISTS idx_price_history_card_recorded ON price_history(card_id, recorded_at)'
+	);
+}
+
+export function recordPriceSnapshot(
+	database: Database.Database,
+	cardId: string,
+	priceUsd: string | null | undefined
+): void {
+	if (!priceUsd) return;
+	ensurePriceHistoryTable(database);
+	database
+		.prepare('INSERT INTO price_history (card_id, price_usd) VALUES (?, ?)')
+		.run(cardId, priceUsd);
 }
 
 export function closeDatabase(): void {

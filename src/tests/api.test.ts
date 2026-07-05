@@ -18,6 +18,8 @@ const mockStatement = {
 // Mock the database module
 vi.mock('../lib/database', () => ({
 	getDatabase: () => mockDatabase,
+	recordPriceSnapshot: vi.fn(),
+	ensurePriceHistoryTable: vi.fn(),
 	cardRowToScryfallCard: (row: any) => ({
 		id: row.id,
 		name: row.name,

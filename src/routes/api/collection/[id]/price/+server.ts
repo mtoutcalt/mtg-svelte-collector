@@ -3,6 +3,7 @@ import type { RequestHandler } from './$types';
 import Database from 'better-sqlite3';
 import path from 'path';
 import { scryfallFetch } from '$lib/server/scryfall';
+import { recordPriceSnapshot } from '$lib/database';
 
 const dbPath = path.join(process.cwd(), 'data', 'collection.db');
 
@@ -85,6 +86,8 @@ export const PUT: RequestHandler = async ({ params }) => {
 			now,
 			id
 		);
+
+		recordPriceSnapshot(db, id, scryfallData.prices?.usd);
 
 		// Fetch updated card data to return
 		const updatedCard = db.prepare(`

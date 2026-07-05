@@ -27,6 +27,7 @@
 	import ImageModal from '$lib/components/common/ImageModal.svelte';
 	import TodaysAdditions from '$lib/components/TodaysAdditions.svelte';
 	import DailyLesson from '$lib/components/DailyLesson.svelte';
+	import PriceMovers from '$lib/components/PriceMovers.svelte';
 	
 	// Import global styles
 	import '$lib/components/styles/globals.css';
@@ -306,6 +307,9 @@
 	{#if isError(cardData)}
 		<p class="error">{cardData.error}</p>
 	{/if}
+
+	<!-- Price Movers -->
+	<PriceMovers on:openImageModal={handleOpenImageModal} />
 
 	<!-- Daily Lesson -->
 	<DailyLesson on:openImageModal={handleOpenImageModal} />

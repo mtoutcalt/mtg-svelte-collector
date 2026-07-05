@@ -5,7 +5,11 @@
       "Bash(node ./node_modules/@sveltejs/kit/svelte-kit.js sync)",
       "Bash(node ./node_modules/svelte-check/bin/svelte-check.js --tsconfig ./tsconfig.json)",
       "Bash(node -e \"console.log\\(require\\('./node_modules/svelte-check/package.json'\\).bin\\)\")",
-      "Bash(node ./node_modules/svelte-check/dist/src/index.js --tsconfig ./tsconfig.json)"
+      "Bash(node ./node_modules/svelte-check/dist/src/index.js --tsconfig ./tsconfig.json)",
+      "PowerShell(npm run check)",
+      "PowerShell(npm test)",
+      "PowerShell(if \\(Test-Path node_modules\\) { \\(Get-ChildItem node_modules | Measure-Object\\).Count } else { 'no node_modules' })",
+      "Bash(wsl -e bash -lc 'export PATH=\"$HOME/.nvm/versions/node/v22.16.0/bin:$PATH\" && node \"/mnt/c/Users/mtout/AppData/Local/Temp/claude/c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector/6639bdca-a8f3-44f6-b421-96149d5c8309/scratchpad/verify-batch.mjs\"')"
     ],
     "additionalDirectories": [
       "c:\\Users\\mtout\\.claude\\projects\\c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector\\memory"

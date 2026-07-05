@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getDatabase, cardRowToScryfallCard, scryfallCardToCardRow, type CardRow } from '$lib/database';
+import { getDatabase, cardRowToScryfallCard, scryfallCardToCardRow, recordPriceSnapshot, type CardRow } from '$lib/database';
 import type { ScryfallCard } from '$lib/utils';
 import type { RequestHandler } from './$types';
 
@@ -53,6 +53,9 @@ export const POST: RequestHandler = async ({ request }) => {
 				row.image_normal, row.image_small, row.image_large, row.card_faces,
 				row.price_usd, row.price_usd_foil, row.price_eur, row.price_tix, row.legalities, row.quantity, row.fuzzy_match
 			);
+
+			// Baseline price snapshot at acquisition, for the price movers feature
+			recordPriceSnapshot(db, row.id, row.price_usd);
 
 			return json({ success: true, message: 'Card added to collection', quantity: row.quantity });
 		}
