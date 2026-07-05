@@ -33,7 +33,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		
 		if (existingCard) {
 			// Card exists, increment quantity
-			const newQuantity = existingCard.quantity + (card.quantity || 1);
+			const newQuantity = existingCard.quantity + (card.quantity ?? 1);
 			const updateStmt = db.prepare('UPDATE cards SET quantity = ? WHERE id = ?');
 			updateStmt.run(newQuantity, card.id);
 			return json({ success: true, message: `Card quantity updated to ${newQuantity}`, quantity: newQuantity });

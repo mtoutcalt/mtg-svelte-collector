@@ -9,7 +9,21 @@
       "PowerShell(npm run check)",
       "PowerShell(npm test)",
       "PowerShell(if \\(Test-Path node_modules\\) { \\(Get-ChildItem node_modules | Measure-Object\\).Count } else { 'no node_modules' })",
-      "Bash(wsl -e bash -lc 'export PATH=\"$HOME/.nvm/versions/node/v22.16.0/bin:$PATH\" && node \"/mnt/c/Users/mtout/AppData/Local/Temp/claude/c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector/6639bdca-a8f3-44f6-b421-96149d5c8309/scratchpad/verify-batch.mjs\"')"
+      "Bash(wsl -e bash -lc 'export PATH=\"$HOME/.nvm/versions/node/v22.16.0/bin:$PATH\" && node \"/mnt/c/Users/mtout/AppData/Local/Temp/claude/c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector/6639bdca-a8f3-44f6-b421-96149d5c8309/scratchpad/verify-batch.mjs\"')",
+      "Bash(wsl -e bash -lc 'export PATH=\"$HOME/.nvm/versions/node/v22.16.0/bin:$PATH\" && cd /mnt/c/Users/mtout/OneDrive/Documents/Code/mtg-svelte-collector && npm run dev')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(curl -s -X POST http://localhost:5173/api/decks/import -H \"Content-Type: application/json\" --data-binary @\"C:\\\\Users\\\\mtout\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector\\\\187f6eff-5356-4485-8983-57c86313d94f\\\\scratchpad\\\\import_payload.json\" -o \"C:\\\\Users\\\\mtout\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector\\\\187f6eff-5356-4485-8983-57c86313d94f\\\\scratchpad\\\\import_response.json\" -w \"%{http_code}\\\\n\")",
+      "Bash(node \"C:\\\\Users\\\\mtout\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector\\\\187f6eff-5356-4485-8983-57c86313d94f\\\\scratchpad\\\\save_deck.mjs\")",
+      "Bash(curl -s http://localhost:5173/api/decks/6be03a24-17b0-471b-b03e-3e2977cab94d)",
+      "Bash(node \"C:\\\\Users\\\\mtout\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector\\\\187f6eff-5356-4485-8983-57c86313d94f\\\\scratchpad\\\\fix_quantities.mjs\")",
+      "Bash(node -e ' *)",
+      "Bash(npx vitest *)",
+      "Bash(tasklist)",
+      "Bash(wsl -e bash -lc 'export PATH=\"$HOME/.nvm/versions/node/v22.16.0/bin:$PATH\"; pgrep -fal \"vite|node\" || echo \"no wsl node processes\"')",
+      "Bash(wmic process *)",
+      "Bash(powershell -NoProfile -Command \"Get-CimInstance Win32_Process -Filter \\\\\"name='node.exe'\\\\\" | Select-Object ProcessId,CommandLine | Format-List\")",
+      "Bash(powershell -NoProfile -Command \"Stop-Process -Id 6996,10936 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(netstat -ano)"
     ],
     "additionalDirectories": [
       "c:\\Users\\mtout\\.claude\\projects\\c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector\\memory"

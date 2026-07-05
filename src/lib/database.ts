@@ -332,7 +332,7 @@ export function scryfallCardToCardRow(card: ScryfallCard): Omit<CardRow, 'create
 		price_eur: card.prices?.eur || null,
 		price_tix: card.prices?.tix || null,
 		legalities: card.legalities ? JSON.stringify(card.legalities) : null,
-		quantity: card.quantity || 1,
+		quantity: card.quantity ?? 1,
 		fuzzy_match: card.fuzzyMatch ? 1 : 0,
 		price_usd_6mo_ago: card.priceHistory?.usd6moAgo || null,
 		price_usd_12mo_ago: card.priceHistory?.usd12moAgo || null,
