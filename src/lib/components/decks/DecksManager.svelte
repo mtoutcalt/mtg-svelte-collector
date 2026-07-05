@@ -189,6 +189,38 @@
 		}
 	}
 	
+	async function updateStrategy(event: CustomEvent) {
+		const { deckId, strategy } = event.detail;
+		const deck = decks.find(d => d.id === deckId) || selectedDeck;
+
+		try {
+			const response = await fetch(`/api/decks/${deckId}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({ name: deck.name, description: deck.description, strategy })
+			});
+
+			if (response.ok) {
+				if (selectedDeck?.id === deckId) {
+					selectedDeck = { ...selectedDeck, strategy };
+				}
+				const deckIndex = decks.findIndex(d => d.id === deckId);
+				if (deckIndex >= 0) {
+					decks[deckIndex] = { ...decks[deckIndex], strategy };
+					decks = [...decks];
+				}
+			} else {
+				const error = await response.json();
+				alert(error.error || 'Failed to save strategy');
+			}
+		} catch (error) {
+			console.error('Error saving strategy:', error);
+			alert('Failed to save strategy');
+		}
+	}
+
 	async function removeCardFromDeck(event: CustomEvent) {
 		const { deckId, cardId } = event.detail;
 		
@@ -282,6 +314,7 @@
 				on:openImageModal={handleOpenImageModal}
 				on:updateCardQuantity={updateCardQuantity}
 				on:removeCardFromDeck={removeCardFromDeck}
+				on:updateStrategy={updateStrategy}
 			/>
 		{/if}
 	</div>

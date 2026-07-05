@@ -73,33 +73,38 @@ export const DELETE: RequestHandler = async ({ params }) => {
 export const PUT: RequestHandler = async ({ params, request }) => {
 	try {
 		const { id } = params;
-		const { name, description } = await request.json();
-		
+		const { name, description, strategy } = await request.json();
+
 		if (!name || typeof name !== 'string' || name.trim().length === 0) {
 			return json({ error: 'Deck name is required' }, { status: 400 });
 		}
-		
+
 		const db = getDatabase();
-		
+
 		// Check if deck exists
-		const existingDeck = db.prepare('SELECT id FROM decks WHERE id = ?').get(id);
+		const existingDeck = db.prepare('SELECT * FROM decks WHERE id = ?').get(id) as DeckRow | undefined;
 		if (!existingDeck) {
 			return json({ error: 'Deck not found' }, { status: 404 });
 		}
-		
+
 		// Check if name is taken by another deck
 		const nameConflict = db.prepare('SELECT id FROM decks WHERE name = ? AND id != ?').get(name.trim(), id);
 		if (nameConflict) {
 			return json({ error: 'A deck with this name already exists' }, { status: 400 });
 		}
-		
+
 		const updateDeck = db.prepare(`
-			UPDATE decks 
-			SET name = ?, description = ?, updated_at = CURRENT_TIMESTAMP
+			UPDATE decks
+			SET name = ?, description = ?, strategy = ?, updated_at = CURRENT_TIMESTAMP
 			WHERE id = ?
 		`);
-		
-		updateDeck.run(name.trim(), description || null, id);
+
+		updateDeck.run(
+			name.trim(),
+			description !== undefined ? description || null : existingDeck.description,
+			strategy !== undefined ? strategy || null : existingDeck.strategy,
+			id
+		);
 		
 		const updatedDeck = db.prepare('SELECT * FROM decks WHERE id = ?').get(id) as DeckRow;
 		

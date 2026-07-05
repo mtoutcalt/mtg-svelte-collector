@@ -4,12 +4,81 @@
 	
 	export let deck: any = null;
 	export let loading: boolean = false;
-	
+
 	const dispatch = createEventDispatcher();
-	
+
+	let editingStrategy = false;
+	let strategyDraft = '';
+
 	function handleBackToDecks() {
 		dispatch('backToDecks');
 	}
+
+	function startEditingStrategy() {
+		strategyDraft = deck?.strategy || '';
+		editingStrategy = true;
+	}
+
+	function cancelEditingStrategy() {
+		editingStrategy = false;
+	}
+
+	function saveStrategy() {
+		dispatch('updateStrategy', { deckId: deck.id, strategy: strategyDraft.trim() });
+		editingStrategy = false;
+	}
+
+	type StrategyBlock =
+		| { type: 'heading'; text: string }
+		| { type: 'list'; items: string[] }
+		| { type: 'paragraph'; text: string };
+
+	function parseStrategy(text: string): StrategyBlock[] {
+		if (!text) return [];
+		const blocks: StrategyBlock[] = [];
+		const lines = text.split('\n');
+		let currentList: string[] | null = null;
+		let currentParagraph: string[] = [];
+
+		function flushParagraph() {
+			if (currentParagraph.length > 0) {
+				blocks.push({ type: 'paragraph', text: currentParagraph.join(' ') });
+				currentParagraph = [];
+			}
+		}
+
+		function flushList() {
+			if (currentList && currentList.length > 0) {
+				blocks.push({ type: 'list', items: currentList });
+			}
+			currentList = null;
+		}
+
+		for (const rawLine of lines) {
+			const line = rawLine.trim();
+			if (line.startsWith('## ')) {
+				flushParagraph();
+				flushList();
+				blocks.push({ type: 'heading', text: line.slice(3).trim() });
+			} else if (line.startsWith('- ')) {
+				flushParagraph();
+				if (!currentList) currentList = [];
+				currentList.push(line.slice(2).trim());
+			} else if (line.length === 0) {
+				flushParagraph();
+				flushList();
+			} else {
+				flushList();
+				currentParagraph.push(line);
+			}
+		}
+		flushParagraph();
+		flushList();
+
+		return blocks;
+	}
+
+	$: strategyBlocks = parseStrategy(deck?.strategy || '');
 	
 	function handleOpenImageModal(event: any) {
 		dispatch('openImageModal', event.detail);
@@ -113,7 +182,50 @@
 				{/if}
 			</div>
 		</div>
-		
+
+		<div class="strategy-section">
+			<div class="strategy-header">
+				<h3>How to Play This Deck</h3>
+				{#if !editingStrategy}
+					<button class="edit-strategy-btn" on:click={startEditingStrategy}>
+						{deck.strategy ? '✏️ Edit' : '+ Add Strategy'}
+					</button>
+				{/if}
+			</div>
+
+			{#if editingStrategy}
+				<div class="strategy-editor">
+					<textarea
+						bind:value={strategyDraft}
+						rows="14"
+						placeholder="Write the game plan: mulligan guidance, early/mid/late game, key synergies, how to sequence removal..."
+					></textarea>
+					<div class="strategy-editor-actions">
+						<button class="save-strategy-btn" on:click={saveStrategy}>Save</button>
+						<button class="cancel-strategy-btn" on:click={cancelEditingStrategy}>Cancel</button>
+					</div>
+				</div>
+			{:else if strategyBlocks.length > 0}
+				<div class="strategy-content">
+					{#each strategyBlocks as block}
+						{#if block.type === 'heading'}
+							<h4>{block.text}</h4>
+						{:else if block.type === 'list'}
+							<ul>
+								{#each block.items as item}
+									<li>{item}</li>
+								{/each}
+							</ul>
+						{:else}
+							<p>{block.text}</p>
+						{/if}
+					{/each}
+				</div>
+			{:else}
+				<p class="strategy-empty">No strategy notes yet. Click "Add Strategy" to write down the game plan.</p>
+			{/if}
+		</div>
+
 		{#if deck.cards && deck.cards.length > 0}
 			<div class="deck-cards">
 				<h3>Cards in Deck</h3>
@@ -259,6 +371,127 @@
 	.mana-generic { background: rgba(150, 150, 150, 0.3); color: #dddddd; }
 	.mana-other { background: rgba(200, 100, 200, 0.3); color: #ffaaff; }
 	
+	.strategy-section {
+		background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		border-radius: 12px;
+		padding: 1.5rem 1.75rem;
+		margin-bottom: 2rem;
+	}
+
+	.strategy-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 1rem;
+	}
+
+	.strategy-header h3 {
+		font-family: 'Cinzel', serif;
+		font-size: 1.3rem;
+		color: #c9b037;
+		margin: 0;
+	}
+
+	.edit-strategy-btn {
+		background: rgba(201, 176, 55, 0.15);
+		color: #c9b037;
+		border: 1px solid rgba(201, 176, 55, 0.4);
+		padding: 0.4rem 0.9rem;
+		border-radius: 6px;
+		cursor: pointer;
+		font-size: 0.85rem;
+		transition: all 0.2s;
+	}
+
+	.edit-strategy-btn:hover {
+		background: rgba(201, 176, 55, 0.25);
+	}
+
+	.strategy-content h4 {
+		color: #c9b037;
+		font-family: 'Cinzel', serif;
+		font-size: 1.05rem;
+		margin: 1.25rem 0 0.6rem;
+	}
+
+	.strategy-content h4:first-child {
+		margin-top: 0;
+	}
+
+	.strategy-content p {
+		color: rgba(232, 233, 237, 0.85);
+		line-height: 1.65;
+		margin: 0 0 0.75rem;
+	}
+
+	.strategy-content ul {
+		margin: 0 0 0.75rem;
+		padding-left: 1.25rem;
+	}
+
+	.strategy-content ul li {
+		color: rgba(232, 233, 237, 0.85);
+		line-height: 1.6;
+		margin-bottom: 0.4rem;
+	}
+
+	.strategy-empty {
+		color: rgba(232, 233, 237, 0.5);
+		font-style: italic;
+		margin: 0;
+	}
+
+	.strategy-editor textarea {
+		width: 100%;
+		box-sizing: border-box;
+		background: rgba(0, 0, 0, 0.25);
+		color: #e8e9ed;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		border-radius: 8px;
+		padding: 0.85rem;
+		font-family: inherit;
+		font-size: 0.95rem;
+		line-height: 1.5;
+		resize: vertical;
+	}
+
+	.strategy-editor-actions {
+		display: flex;
+		gap: 0.75rem;
+		margin-top: 0.75rem;
+	}
+
+	.save-strategy-btn {
+		background: linear-gradient(135deg, #c9b037 0%, #f4e58c 100%);
+		color: #0a0e1a;
+		border: none;
+		padding: 0.6rem 1.4rem;
+		border-radius: 6px;
+		cursor: pointer;
+		font-weight: 600;
+		transition: all 0.2s;
+	}
+
+	.save-strategy-btn:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 15px rgba(201, 176, 55, 0.35);
+	}
+
+	.cancel-strategy-btn {
+		background: rgba(255, 255, 255, 0.08);
+		color: #e8e9ed;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		padding: 0.6rem 1.4rem;
+		border-radius: 6px;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.cancel-strategy-btn:hover {
+		background: rgba(255, 255, 255, 0.14);
+	}
+
 	.deck-cards h3 {
 		font-family: 'Cinzel', serif;
 		font-size: 1.5rem;

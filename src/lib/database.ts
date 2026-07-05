@@ -138,6 +138,13 @@ function initializeDatabase(database: Database.Database): void {
 			database.exec('ALTER TABLE decks ADD COLUMN format TEXT');
 		}
 
+		// Check if strategy column exists in decks table, if not add it for deck strategy notes
+		const hasStrategyColumn = decksColumnInfo.some(col => col.name === 'strategy');
+
+		if (!hasStrategyColumn) {
+			database.exec('ALTER TABLE decks ADD COLUMN strategy TEXT');
+		}
+
 		// Check if is_sideboard column exists in deck_cards table
 		const deckCardsColumnInfo = database.prepare("PRAGMA table_info(deck_cards)").all() as Array<{name: string}>;
 		const hasSideboardColumn = deckCardsColumnInfo.some(col => col.name === 'is_sideboard');
@@ -236,6 +243,7 @@ export interface DeckRow {
 	name: string;
 	description: string | null;
 	format: string | null;
+	strategy: string | null;
 	created_at: string;
 	updated_at: string;
 }

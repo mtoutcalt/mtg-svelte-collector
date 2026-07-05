@@ -23,7 +23,18 @@
       "Bash(wmic process *)",
       "Bash(powershell -NoProfile -Command \"Get-CimInstance Win32_Process -Filter \\\\\"name='node.exe'\\\\\" | Select-Object ProcessId,CommandLine | Format-List\")",
       "Bash(powershell -NoProfile -Command \"Stop-Process -Id 6996,10936 -Force -ErrorAction SilentlyContinue\")",
-      "Bash(netstat -ano)"
+      "Bash(netstat -ano)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://127.0.0.1:5173/api/decks/6be03a24-17b0-471b-b03e-3e2977cab94d -o /dev/null -w \"http_status=%{http_code}\\\\n\")",
+      "Bash(node \"C:\\\\Users\\\\mtout\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector\\\\187f6eff-5356-4485-8983-57c86313d94f\\\\scratchpad\\\\strategy.mjs\")",
+      "Bash(curl -s http://127.0.0.1:5173/api/decks/6be03a24-17b0-471b-b03e-3e2977cab94d)",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const j=JSON.parse\\(d\\); console.log\\(Object.keys\\(j\\)\\); console.log\\('strategy field:', JSON.stringify\\(j.strategy\\)\\);}\\);\")",
+      "Bash(wsl -e bash -lc 'kill 436 452 2>/dev/null; sleep 1; pgrep -fal \"vite dev\" || echo \"stopped\"')",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:5173/)",
+      "Bash(curl -s http://127.0.0.1:5173/api/collection -o /dev/null -w \"WSL server status: %{http_code}\\\\n\" --max-time 3)",
+      "Bash(node scripts/check-dev-platform.cjs)",
+      "Bash(echo \"exit code: $?\")",
+      "Bash(wsl -e bash -lc 'export PATH=\"$HOME/.nvm/versions/node/v22.16.0/bin:$PATH\" && cd /mnt/c/Users/mtout/OneDrive/Documents/Code/mtg-svelte-collector && node scripts/check-dev-platform.cjs; echo \"exit code: $?\"')"
     ],
     "additionalDirectories": [
       "c:\\Users\\mtout\\.claude\\projects\\c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector\\memory"
