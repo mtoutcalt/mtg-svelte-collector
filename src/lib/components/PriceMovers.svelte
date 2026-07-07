@@ -21,6 +21,7 @@
 	let losers: Mover[] = [];
 	let basis: 'recent' | 'sixMonth' = 'recent';
 	let windowDays = 30;
+	let lastRefreshedAt: string | null = null;
 	let isLoading = true;
 	let refreshing = false;
 	let error = '';
@@ -39,6 +40,7 @@
 			losers = data.losers || [];
 			basis = data.basis || 'recent';
 			windowDays = data.windowDays || 30;
+			lastRefreshedAt = data.lastRefreshedAt || null;
 		} catch (err) {
 			console.error('Error loading price movers:', err);
 			error = 'Failed to load price movers';
@@ -82,6 +84,16 @@
 		return `${sign}$${Math.abs(mover.change).toFixed(2)} (${sign}${Math.abs(mover.changePercent).toFixed(1)}%)`;
 	}
 
+	function formatLastRefreshed(iso: string): string {
+		const date = new Date(iso);
+		if (isNaN(date.getTime())) return '';
+		const hours = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60));
+		const days = Math.floor(hours / 24);
+		if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+		if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+		return 'less than an hour ago';
+	}
+
 	$: hasMovers = gainers.length > 0 || losers.length > 0;
 	$: basisLabel = basis === 'sixMonth'
 		? 'compared with ~6 months ago'
@@ -97,6 +109,11 @@
 				<button class="refresh-button" on:click={refreshPrices} disabled={refreshing}>
 					{refreshing ? 'Updating prices…' : 'Refresh Prices'}
 				</button>
+				{#if lastRefreshedAt}
+					<span class="last-refreshed" title={new Date(lastRefreshedAt).toLocaleString()}>
+						Last refreshed {formatLastRefreshed(lastRefreshedAt)}
+					</span>
+				{/if}
 			</div>
 		</div>
 
@@ -212,6 +229,12 @@
 	.refresh-button:disabled {
 		opacity: 0.6;
 		cursor: wait;
+	}
+
+	.last-refreshed {
+		font-size: 0.8rem;
+		font-style: italic;
+		color: rgba(232, 233, 237, 0.5);
 	}
 
 	.movers-grid {

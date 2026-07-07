@@ -166,6 +166,7 @@ function initializeDatabase(database: Database.Database): void {
 		).get();
 
 		ensurePriceHistoryTable(database);
+		ensureAppMetadataTable(database);
 
 		if (!priceHistoryExisted) {
 			// Seed a baseline snapshot for existing cards, dated at their last price update
@@ -224,6 +225,34 @@ export function recordPriceSnapshot(
 	database
 		.prepare('INSERT INTO price_history (card_id, price_usd) VALUES (?, ?)')
 		.run(cardId, priceUsd);
+}
+
+// Key-value store for app-level state that doesn't belong to any one card,
+// e.g. when the "refresh prices" operation last ran.
+export const PRICES_LAST_REFRESHED_KEY = 'prices_last_refreshed_at';
+
+export function ensureAppMetadataTable(database: Database.Database): void {
+	database.exec(`
+		CREATE TABLE IF NOT EXISTS app_metadata (
+			key TEXT PRIMARY KEY,
+			value TEXT NOT NULL,
+			updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+		)
+	`);
+}
+
+export function getAppMetadata(database: Database.Database, key: string): string | null {
+	ensureAppMetadataTable(database);
+	const row = database.prepare('SELECT value FROM app_metadata WHERE key = ?').get(key) as { value: string } | undefined;
+	return row?.value ?? null;
+}
+
+export function setAppMetadata(database: Database.Database, key: string, value: string): void {
+	ensureAppMetadataTable(database);
+	database.prepare(`
+		INSERT INTO app_metadata (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP)
+		ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
+	`).run(key, value);
 }
 
 export function closeDatabase(): void {

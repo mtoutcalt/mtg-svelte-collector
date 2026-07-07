@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getDatabase } from '$lib/database';
+import { getDatabase, getAppMetadata, PRICES_LAST_REFRESHED_KEY } from '$lib/database';
 import type { RequestHandler } from './$types';
 
 interface MoverRow {
@@ -116,7 +116,18 @@ export const GET: RequestHandler = async ({ url }) => {
 			.sort((a, b) => a.change - b.change)
 			.slice(0, 5);
 
-		return json({ basis, windowDays: days, gainers, losers });
+		// When the last refresh ran. Falls back to the per-card timestamps for
+		// refreshes done before the operation-level timestamp existed; strftime
+		// adds the 'Z' so the client parses SQLite's UTC value correctly.
+		let lastRefreshedAt = getAppMetadata(db, PRICES_LAST_REFRESHED_KEY);
+		if (!lastRefreshedAt) {
+			const fallbackRow = db.prepare(
+				"SELECT strftime('%Y-%m-%dT%H:%M:%SZ', MAX(price_last_updated)) AS ts FROM cards"
+			).get() as { ts: string | null } | undefined;
+			lastRefreshedAt = fallbackRow?.ts ?? null;
+		}
+
+		return json({ basis, windowDays: days, gainers, losers, lastRefreshedAt });
 	} catch (error) {
 		console.error('Error computing price movers:', error);
 		return json({ error: 'Failed to compute price movers' }, { status: 500 });

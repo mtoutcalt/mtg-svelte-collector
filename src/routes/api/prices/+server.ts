@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getDatabase, cardRowToScryfallCard, recordPriceSnapshot, type CardRow } from '$lib/database';
+import { getDatabase, cardRowToScryfallCard, recordPriceSnapshot, setAppMetadata, PRICES_LAST_REFRESHED_KEY, type CardRow } from '$lib/database';
 import type { RequestHandler } from './$types';
 import { scryfallFetch } from '$lib/server/scryfall';
 
@@ -150,11 +150,21 @@ export const PUT: RequestHandler = async () => {
 
 		console.log(`Updated prices for ${updatedCount} cards`);
 
+		// Remember when this refresh ran so the UI can show it. Only recorded when
+		// at least one card actually updated, so a total Scryfall outage doesn't
+		// masquerade as a fresh refresh.
+		let lastRefreshedAt: string | null = null;
+		if (updatedCount > 0) {
+			lastRefreshedAt = new Date().toISOString();
+			setAppMetadata(db, PRICES_LAST_REFRESHED_KEY, lastRefreshedAt);
+		}
+
 		return json({
 			success: true,
 			message: `Updated prices for ${updatedCount} cards`,
 			updated: updatedCount,
 			total: cards.length,
+			lastRefreshedAt,
 			errors: errors.length > 0 ? errors : undefined
 		});
 

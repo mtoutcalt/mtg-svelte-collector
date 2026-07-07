@@ -34,10 +34,15 @@
       "Bash(curl -s http://127.0.0.1:5173/api/collection -o /dev/null -w \"WSL server status: %{http_code}\\\\n\" --max-time 3)",
       "Bash(node scripts/check-dev-platform.cjs)",
       "Bash(echo \"exit code: $?\")",
-      "Bash(wsl -e bash -lc 'export PATH=\"$HOME/.nvm/versions/node/v22.16.0/bin:$PATH\" && cd /mnt/c/Users/mtout/OneDrive/Documents/Code/mtg-svelte-collector && node scripts/check-dev-platform.cjs; echo \"exit code: $?\"')"
+      "Bash(wsl -e bash -lc 'export PATH=\"$HOME/.nvm/versions/node/v22.16.0/bin:$PATH\" && cd /mnt/c/Users/mtout/OneDrive/Documents/Code/mtg-svelte-collector && node scripts/check-dev-platform.cjs; echo \"exit code: $?\"')",
+      "PowerShell(curl.exe -s --max-time 10 \"http://localhost:5173/api/prices/movers\")",
+      "PowerShell(wsl -e bash -c \"cd /mnt/c/Users/mtout/OneDrive/Documents/Code/mtg-svelte-collector && touch src/lib/database.ts src/routes/api/prices/+server.ts src/routes/api/prices/movers/+server.ts src/lib/components/PriceMovers.svelte && echo touched\")",
+      "PowerShell(Start-Sleep -Seconds 2; $raw = curl.exe -s --max-time 10 \"http://localhost:5173/api/prices/movers\"; $raw.Substring\\([Math]::Max\\(0, $raw.Length - 150\\)\\))",
+      "PowerShell(wsl -e bash -lc 'export PATH=\"$HOME/.nvm/versions/node/v22.16.0/bin:$PATH\" && node \"/mnt/c/Users/mtout/AppData/Local/Temp/claude/c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector/c13dc0ab-607e-4cebadeb-2e17437da3ef/scratchpad/verify-refresh-timestamp.cjs\"')"
     ],
     "additionalDirectories": [
-      "c:\\Users\\mtout\\.claude\\projects\\c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector\\memory"
+      "c:\\Users\\mtout\\.claude\\projects\\c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector\\memory",
+      "C:\\Users\\mtout\\AppData\\Local\\Temp\\claude\\c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector\\c13dc0ab-607e-4cebadeb-2e17437da3ef\\scratchpad"
     ]
   }
 }
