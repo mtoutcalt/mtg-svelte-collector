@@ -24,6 +24,7 @@
 	import CollectionView from '$lib/components/collection/CollectionView.svelte';
 	import AnalyticsView from '$lib/components/analytics/AnalyticsView.svelte';
 	import DecksManager from '$lib/components/decks/DecksManager.svelte';
+	import ArchetypeGallery from '$lib/components/learn/ArchetypeGallery.svelte';
 	import ImageModal from '$lib/components/common/ImageModal.svelte';
 	import TodaysAdditions from '$lib/components/TodaysAdditions.svelte';
 	import DailyLesson from '$lib/components/DailyLesson.svelte';
@@ -43,6 +44,7 @@
 	let viewingCollection: boolean = false;
 	let viewingAnalytics: boolean = false;
 	let viewingDecks: boolean = false;
+	let viewingLearn: boolean = false;
 	let showImageModal: boolean = false;
 	let modalImageSrc: string = '';
 	let modalImageName: string = '';
@@ -163,6 +165,7 @@
 		viewingCollection = !viewingCollection;
 		viewingAnalytics = false;
 		viewingDecks = false;
+		viewingLearn = false;
 		if (viewingCollection) {
 			loadCollection();
 		}
@@ -172,6 +175,7 @@
 		viewingAnalytics = !viewingAnalytics;
 		viewingCollection = false;
 		viewingDecks = false;
+		viewingLearn = false;
 		if (viewingAnalytics) {
 			loadAnalytics();
 		}
@@ -181,6 +185,17 @@
 		viewingDecks = !viewingDecks;
 		viewingCollection = false;
 		viewingAnalytics = false;
+		viewingLearn = false;
+	}
+
+	function handleToggleLearn() {
+		viewingLearn = !viewingLearn;
+		viewingCollection = false;
+		viewingAnalytics = false;
+		viewingDecks = false;
+		if (viewingLearn) {
+			loadCollection();
+		}
 	}
 
 	async function loadAnalytics(): Promise<void> {
@@ -266,18 +281,20 @@
 </script>
 
 <!-- Navigation -->
-<Navigation 
-	{viewingCollection} 
+<Navigation
+	{viewingCollection}
 	{viewingAnalytics}
 	{viewingDecks}
+	{viewingLearn}
 	collectionCount={$collectionCount}
 	uniqueCardCount={$uniqueCardCount}
 	on:toggleCollection={handleToggleCollection}
 	on:toggleAnalytics={handleToggleAnalytics}
 	on:toggleDecks={handleToggleDecks}
+	on:toggleLearn={handleToggleLearn}
 />
 
-{#if !viewingCollection && !viewingAnalytics && !viewingDecks}
+{#if !viewingCollection && !viewingAnalytics && !viewingDecks && !viewingLearn}
 	<!-- Search Section -->
 	<SearchForm 
 		bind:cardName={cardName}
@@ -343,6 +360,13 @@
 	<!-- Decks View -->
 	<DecksManager
 		showDecks={viewingDecks}
+		on:openImageModal={handleOpenImageModal}
+	/>
+
+{:else if viewingLearn}
+	<!-- Learn View -->
+	<ArchetypeGallery
+		collection={$collection}
 		on:openImageModal={handleOpenImageModal}
 	/>
 {/if}

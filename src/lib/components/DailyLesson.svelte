@@ -161,6 +161,41 @@
 			body: 'Whenever you cast a non-creature spell, a creature with Prowess gets +1/+1 until end of turn. Cast two spells and it gets +2/+2. It rewards spell-heavy decks and can lead to surprising bursts of damage.',
 			scryfallQuery: 'o:"Prowess" t:creature r:common -is:digital',
 		},
+		{
+			category: 'Keywords',
+			categoryColor: '#9b59b6',
+			title: 'Double Strike',
+			body: 'A creature with Double Strike deals combat damage twice — once during the first-strike step and again during the regular step. A 3/3 with Double Strike effectively hits for 6. Paired with Deathtouch or Trample, it becomes especially deadly.',
+			scryfallQuery: 'o:"Double strike" t:creature r:uncommon -o:"gains double strike" -o:"gain double strike" -is:digital',
+		},
+		{
+			category: 'Keywords',
+			categoryColor: '#9b59b6',
+			title: 'Defender',
+			body: 'A creature with Defender can\'t attack — it\'s built to hold the line. These are usually walls with high toughness, meant to block early aggression while you set up. Some cards give them ways to deal damage without attacking.',
+			scryfallQuery: 'o:"Defender" t:creature r:common -is:digital',
+		},
+		{
+			category: 'Keywords',
+			categoryColor: '#9b59b6',
+			title: 'Ward',
+			body: 'Ward is a softer version of Hexproof. A creature with "Ward {2}" can be targeted, but the opponent must pay an extra cost — here, two mana — or their spell or ability is countered. It taxes removal rather than outright preventing it.',
+			scryfallQuery: 'o:"Ward" t:creature r:rare -is:digital',
+		},
+		{
+			category: 'Keywords',
+			categoryColor: '#9b59b6',
+			title: 'Indestructible',
+			body: 'An Indestructible permanent can\'t be destroyed by damage or by "destroy" effects. It still isn\'t invincible: it can be exiled, bounced to hand, sacrificed, or reduced to 0 toughness. Knowing what does and doesn\'t get around it is a key skill.',
+			scryfallQuery: 'o:"Indestructible" r:rare -is:digital',
+		},
+		{
+			category: 'Keywords',
+			categoryColor: '#9b59b6',
+			title: 'Scry',
+			body: 'When you Scry, you look at the top card (or cards) of your library and decide whether to keep each on top or put it on the bottom. It smooths your draws — bottom a land when you\'re flooded, or keep a spell you need. Small but powerful consistency.',
+			scryfallQuery: 'o:"Scry" r:common -is:digital',
+		},
 
 		// --- Rules & Phases ---
 		{
@@ -403,6 +438,155 @@
 			categoryColor: '#607d8b',
 			title: 'Don\'t Over-Sideboard',
 			body: 'Swapping in 8 cards can wreck the consistency and mana curve that made your deck work. Most of the time, changing 2-5 cards is plenty. A few targeted answers usually beat a wholesale rebuild that leaves you with a clunky, untested 60.',
+		},
+
+		// --- Advanced Play ---
+		{
+			category: 'Advanced Play',
+			categoryColor: '#7e57c2',
+			title: 'Inevitability',
+			body: 'Inevitability is the answer to "who wins if the game goes forever?" The deck with card-draw engines, recursion, or a game-ending bomb usually has it. Recognizing who holds inevitability tells you your role: if you have it, trade resources and stall; if your opponent does, you must end the game before their edge takes over.',
+		},
+		{
+			category: 'Advanced Play',
+			categoryColor: '#7e57c2',
+			title: 'Must-Answer Threats',
+			body: 'Learn to sort your opponent\'s cards into "must answer now," "answer eventually," and "can ignore." A ticking planeswalker or a lifelinking bomb demands a response; a lone 2/2 usually does not. Spending premium removal on something you could have simply blocked — while a real threat looms in their hand — is a self-inflicted loss.',
+		},
+		{
+			category: 'Advanced Play',
+			categoryColor: '#7e57c2',
+			title: 'Virtual Card Advantage',
+			body: 'Card advantage is not only about drawing extra cards — it is about how much each card does. A sweeper that kills four creatures is a four-for-one. Making an opponent\'s removal spell useless is "virtual" card advantage: you did not draw a card, but theirs became a blank. Winning this quiet exchange wins games.',
+		},
+		{
+			category: 'Advanced Play',
+			categoryColor: '#7e57c2',
+			title: 'Sculpt Your Draws',
+			body: 'Card selection — Scry, surveil, "draw two, discard one" — quietly ranks among the strongest effects in Magic. It does not grow your hand, but it turns dead draws into live ones. Use it to dig toward your plan: bottom excess lands when flooded, or find the exact answer you need under pressure.',
+			scryfallQuery: 'o:"Surveil" r:common -is:digital',
+		},
+		{
+			category: 'Advanced Play',
+			categoryColor: '#7e57c2',
+			title: 'Strand Their Answers',
+			body: 'Great players force opponents to hold cards that do nothing. Play around the sweeper so it rots in their hand; present no targets so their removal sits dead; bait the counter with a lesser threat. Every card you strand is a card they are not casting — the same as being up a card without ever drawing one.',
+		},
+		{
+			category: 'Advanced Play',
+			categoryColor: '#7e57c2',
+			title: 'Proactive vs. Reactive',
+			body: 'Every turn you choose a stance: spend your mana developing your own plan (proactive), or hold it open to answer theirs (reactive). Aggressive decks want to force the issue; control decks want to answer everything. Picking the wrong stance for your role — durdling when you should attack, or tapping out when you should hold up — quietly loses games.',
+		},
+		{
+			category: 'Advanced Play',
+			categoryColor: '#7e57c2',
+			title: 'Sequence to Fight Their Interaction',
+			body: 'The order you cast spells often matters more than which spells you hold. Bait a counter with your second-best threat, force removal onto a creature you can rebuild from, and save your haymaker for when they are tapped out. Thinking one exchange ahead — "what do they do, and what do I do back?" — separates good players from great ones.',
+		},
+
+		// --- Reading the Game ---
+		{
+			category: 'Reading the Game',
+			categoryColor: '#26c6da',
+			title: 'Read the Full Board State',
+			body: 'Before every meaningful decision, pause and honestly assess three things: who is ahead on board, who is ahead on cards, and who is ahead on life — plus who wins if nothing changes. That read tells you whether to press, stabilize, or gamble. Most misplays come from acting on autopilot instead of reading the actual state of the game.',
+		},
+		{
+			category: 'Reading the Game',
+			categoryColor: '#26c6da',
+			title: 'Count Their Mana',
+			body: 'Always track how much untapped mana your opponent has and what it could represent. Two blue up against control screams counterspell; an untapped Swamp might be removal. Play around what they can actually afford — without freezing over cards they may not even have. Respecting their mana without fearing it is a core skill.',
+		},
+		{
+			category: 'Reading the Game',
+			categoryColor: '#26c6da',
+			title: 'Deduce Their Hand',
+			body: 'You have more information than you think. What they mulliganed, which lands they have played, what they choose to hold, and how they attack all leak clues. A player who passes with mana up and declines an obvious block is usually holding interaction. Read the story their plays are telling you.',
+		},
+		{
+			category: 'Reading the Game',
+			categoryColor: '#26c6da',
+			title: 'Give Away Nothing',
+			body: 'Your rhythm leaks information. Snap-attacking, long tanks before blocking, or hovering over a land all tell a watchful opponent what you are thinking. Play at an even pace and keep your options genuinely open, so opponents cannot read your hand from your tempo the way you are reading theirs.',
+		},
+		{
+			category: 'Reading the Game',
+			categoryColor: '#26c6da',
+			title: 'Bait and Punish',
+			body: 'Offer your opponent a play that looks great, then punish it. Attack into a "free" block that your combat trick blows out. Leave a planeswalker seemingly exposed to lure their creature into your waiting removal. Setting traps — and recognizing when one has been set for you — is where high-level Magic lives.',
+		},
+		{
+			category: 'Reading the Game',
+			categoryColor: '#26c6da',
+			title: 'Play the Percentages',
+			body: 'When you cannot know for sure, play to what is most likely — but weight it by what you can afford to lose. If their possible instant would cost you the game and playing around it costs almost nothing, play safe. If caution throws away a near-certain win, take the small risk. Weigh probability against consequence, not fear.',
+		},
+
+		// --- Formats ---
+		{
+			category: 'Formats',
+			categoryColor: '#8d6e63',
+			title: 'Standard: The Rotating Format',
+			body: 'Standard uses cards from roughly the last few years of sets. Older sets "rotate out" each year, keeping the card pool fresh and usually more affordable. It\'s a great entry point for competitive play because you don\'t need cards from a decade ago.',
+		},
+		{
+			category: 'Formats',
+			categoryColor: '#8d6e63',
+			title: 'Commander (EDH)',
+			body: 'Commander is the most-played casual format. You build a 100-card singleton deck led by a legendary creature — your "commander" — and start at 40 life. Games are multiplayer, political, and full of huge swingy plays. Only one copy of each card is allowed besides basic lands.',
+		},
+		{
+			category: 'Formats',
+			categoryColor: '#8d6e63',
+			title: 'Limited: Draft & Sealed',
+			body: 'In Limited you build a deck on the spot from sealed packs. In Draft, players open packs and pass cards one at a time; in Sealed, you build from six packs. Everyone starts from a random pool, so Limited tests raw skill — your collection budget doesn\'t matter.',
+		},
+		{
+			category: 'Formats',
+			categoryColor: '#8d6e63',
+			title: 'Modern & Eternal Formats',
+			body: 'Modern, Legacy, and Vintage are non-rotating formats where cards stay legal for years. The card pools are enormous and powerful, enabling decks impossible in Standard. They reward deep knowledge but can be pricey, since the best cards never rotate out of demand.',
+		},
+		{
+			category: 'Formats',
+			categoryColor: '#8d6e63',
+			title: 'Why Singleton Changes Everything',
+			body: 'Singleton formats like Commander allow only one copy of each card besides basic lands. That kills consistency — you can\'t lean on drawing four copies of your best card — so decks must be flexible and games play out very differently every time.',
+		},
+
+		// --- Collecting ---
+		{
+			category: 'Collecting',
+			categoryColor: '#ffb300',
+			title: 'Reading Rarity',
+			body: 'Cards come in four rarities, shown by the color of the set symbol: black (common), silver (uncommon), gold (rare), and orange (mythic rare). Rarity reflects how often a card appears in packs — not how good it is. Plenty of commons are staples, and some mythics see little play.',
+			scryfallQuery: 'r:mythic -is:digital',
+		},
+		{
+			category: 'Collecting',
+			categoryColor: '#ffb300',
+			title: 'What Makes a Foil',
+			body: 'Foil cards have a shiny, reflective finish and are pulled far less often than normal versions. They\'re purely cosmetic — a foil plays identically to a non-foil. Older foils can curl or "pringle" over time, so collectors often store them sleeved in top-loaders.',
+			scryfallQuery: 'is:foil r:mythic -is:digital',
+		},
+		{
+			category: 'Collecting',
+			categoryColor: '#ffb300',
+			title: 'Set Symbols Tell a Story',
+			body: 'Every card carries a small set symbol showing which set it came from. Since a card can be reprinted many times, collectors use the symbol to identify the exact printing — and its color doubles as a quick read on the card\'s rarity.',
+		},
+		{
+			category: 'Collecting',
+			categoryColor: '#ffb300',
+			title: 'Condition Is Everything',
+			body: 'A card\'s condition drives its value. Grades run from Near Mint (NM) down through Lightly Played, Moderately Played, and Heavily Played, to Damaged. Sleeving cards and avoiding bent corners or scratches keeps them in top shape — especially valuable or foil ones.',
+		},
+		{
+			category: 'Collecting',
+			categoryColor: '#ffb300',
+			title: 'Reprints & the Reserved List',
+			body: 'Most cards get reprinted over time, which lowers prices by increasing supply. But a set of older cards on the "Reserved List" can never be reprinted — a promise from Wizards that keeps those cards rare and, in many cases, very expensive.',
 		},
 	];
 

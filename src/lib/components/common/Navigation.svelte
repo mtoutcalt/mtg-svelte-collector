@@ -2,6 +2,7 @@
 	export let viewingCollection: boolean = false;
 	export let viewingAnalytics: boolean = false;
 	export let viewingDecks: boolean = false;
+	export let viewingLearn: boolean = false;
 	export let collectionCount: number = 0;
 	export let uniqueCardCount: number = 0;
 
@@ -15,12 +16,15 @@
 		? 'analytics'
 		: viewingDecks
 		? 'decks'
+		: viewingLearn
+		? 'learn'
 		: 'search';
 
 	function handleGoHome() {
 		if (viewingCollection) dispatch('toggleCollection');
 		else if (viewingAnalytics) dispatch('toggleAnalytics');
 		else if (viewingDecks) dispatch('toggleDecks');
+		else if (viewingLearn) dispatch('toggleLearn');
 	}
 
 	function toggleCollectionView() {
@@ -33,6 +37,10 @@
 
 	function toggleDecksView() {
 		dispatch('toggleDecks');
+	}
+
+	function toggleLearnView() {
+		dispatch('toggleLearn');
 	}
 </script>
 
@@ -76,6 +84,14 @@
 				aria-current={activeView === 'decks' ? 'page' : undefined}
 			>
 				<span class="nav-label">Decks</span>
+			</button>
+			<button
+				class="nav-item"
+				class:active={activeView === 'learn'}
+				on:click={toggleLearnView}
+				aria-current={activeView === 'learn' ? 'page' : undefined}
+			>
+				<span class="nav-label">Learn</span>
 			</button>
 			<button
 				class="nav-item"
