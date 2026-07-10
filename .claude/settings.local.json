@@ -7,7 +7,10 @@
       "Bash(npm install)",
       "Bash(del package-lock.json)",
       "WebFetch(domain:scryfall.com)",
-      "WebFetch(domain:api.scryfall.com)"
+      "WebFetch(domain:api.scryfall.com)",
+      "Bash(python \"C:/Users/mtout/AppData/Local/Temp/claude/c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector/12318a9b-b692-489d-ad5a-3c8ef5d710de/scratchpad/inspect_collection.py\")",
+      "PowerShell(npm run check 2>&1)",
+      "Bash(python -c ' *)"
     ],
     "deny": [],
     "ask": []

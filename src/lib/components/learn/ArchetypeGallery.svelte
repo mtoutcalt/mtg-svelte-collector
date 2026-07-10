@@ -81,6 +81,13 @@
 		return (card.type_line || '').toLowerCase().includes('land');
 	}
 
+	// Basic lands (incl. snow basics and Wastes) are freely available, so we
+	// assume the player has them and leave them out of completion/cost. Non-basic
+	// lands (fetches, shocks, duals) still count — those are real acquisitions.
+	function isBasicLand(card: ScryfallCard): boolean {
+		return (card.type_line || '').toLowerCase().includes('basic');
+	}
+
 	// The shared ScryfallCard type doesn't carry `cmc`, so derive mana value
 	// from the printed mana cost instead. Good enough for a teaching curve.
 	function manaValue(card: ScryfallCard): number {
@@ -158,6 +165,8 @@
 		let owned = 0;
 		let missingCost = 0;
 		for (const c of mainboard) {
+			// Assume the player has enough basic lands — don't count them.
+			if (isBasicLand(c)) continue;
 			const need = qty(c);
 			total += need;
 			const have = Math.min(need, ownedByName.get(c.name.toLowerCase()) || 0);
@@ -189,12 +198,16 @@
 
 		<div class="deck-grid">
 			{#each archetypeDecks as deck}
-				<button class="deck-card" on:click={() => selectDeck(deck)}>
+				<button class="deck-card" class:from-collection={deck.fromCollection} on:click={() => selectDeck(deck)}>
 					<div class="deck-card-top">
 						<span class="archetype-badge" style="--c: {deck.archetypeColor}">{deck.archetype}</span>
-						<span class="tier-badge" class:budget={deck.tier === 'budget'}>
-							{deck.tier === 'budget' ? 'Budget' : 'Classic'}
-						</span>
+						{#if deck.fromCollection}
+							<span class="collection-badge">✦ Your Collection</span>
+						{:else}
+							<span class="tier-badge" class:budget={deck.tier === 'budget'}>
+								{deck.tier === 'budget' ? 'Budget' : 'Classic'}
+							</span>
+						{/if}
 					</div>
 					<h3 class="deck-card-name">{deck.name}</h3>
 					<span class="deck-colors">{deck.colors} · {deck.format}</span>
@@ -212,13 +225,20 @@
 				<span class="archetype-badge" style="--c: {selectedDeck.archetypeColor}"
 					>{selectedDeck.archetype}</span
 				>
-				<span class="tier-badge" class:budget={selectedDeck.tier === 'budget'}>
-					{selectedDeck.tier === 'budget' ? 'Budget-friendly' : 'Classic'}
-				</span>
+				{#if selectedDeck.fromCollection}
+					<span class="collection-badge">✦ Your Collection</span>
+				{:else}
+					<span class="tier-badge" class:budget={selectedDeck.tier === 'budget'}>
+						{selectedDeck.tier === 'budget' ? 'Budget-friendly' : 'Classic'}
+					</span>
+				{/if}
 			</div>
 			<h2 class="deck-title">{selectedDeck.name}</h2>
 			<span class="deck-colors">{selectedDeck.colors} · {selectedDeck.format}</span>
 			<p class="deck-oneliner">{selectedDeck.oneLiner}</p>
+			{#if selectedDeck.collectionNote}
+				<p class="collection-note">✦ {selectedDeck.collectionNote}</p>
+			{/if}
 		</header>
 
 		{#if loading}
@@ -265,15 +285,16 @@
 						<div class="completion-numbers">
 							<span><strong>{comparison.owned}</strong> owned</span>
 							<span><strong>{comparison.missing}</strong> missing</span>
-							<span>of {comparison.total} cards</span>
+							<span>of {comparison.total} non-basic cards</span>
 						</div>
 						{#if comparison.missing > 0}
 							<p class="cost-line">
 								Est. cost to finish: <strong>${comparison.missingCost.toFixed(2)}</strong>
 							</p>
 						{:else}
-							<p class="cost-line done">You own everything in this deck! 🎉</p>
+							<p class="cost-line done">You own every non-basic card in this deck! 🎉</p>
 						{/if}
+						<p class="basics-note">Basic lands aren't counted — we assume you have those.</p>
 					{/if}
 				</div>
 			</div>
@@ -348,15 +369,18 @@
 						<div class="list-group">
 							<h4 class="list-head">{g.label} <span class="list-count">({g.count})</span></h4>
 							{#each g.cards as card}
+								{@const basic = isBasicLand(card)}
 								{@const owned = ownedFor(card)}
 								{@const need = qty(card)}
-								<div class="list-row" class:owned={owned >= need}>
+								<div class="list-row" class:owned={!basic && owned >= need}>
 									<span class="row-qty">{need}×</span>
 									<button class="row-name" on:click={() => openImage(card)} title="Click to enlarge"
 										>{card.name}</button
 									>
 									<span class="row-owned">
-										{#if owned >= need}
+										{#if basic}
+											<span class="basic">basic</span>
+										{:else if owned >= need}
 											<span class="check">✓ owned</span>
 										{:else if owned > 0}
 											<span class="partial">own {owned}/{need}</span>
@@ -471,6 +495,44 @@
 		color: #7fd08a;
 		border-color: rgba(127, 208, 138, 0.4);
 		background: rgba(127, 208, 138, 0.1);
+	}
+
+	.collection-badge {
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: #0a0e1a;
+		background: linear-gradient(135deg, #c9b037, #f4e58c);
+		padding: 0.22rem 0.55rem;
+		border-radius: 6px;
+		box-shadow: 0 2px 8px rgba(201, 176, 55, 0.35);
+	}
+
+	.deck-card.from-collection {
+		border-color: rgba(201, 176, 55, 0.55);
+		background: linear-gradient(
+			135deg,
+			rgba(201, 176, 55, 0.08),
+			rgba(255, 255, 255, 0.03)
+		);
+	}
+
+	.deck-card.from-collection:hover {
+		border-color: rgba(201, 176, 55, 0.75);
+	}
+
+	.collection-note {
+		font-family: 'Crimson Text', serif;
+		font-size: 1rem;
+		line-height: 1.55;
+		color: #f4e58c;
+		background: rgba(201, 176, 55, 0.08);
+		border: 1px solid rgba(201, 176, 55, 0.25);
+		border-radius: 10px;
+		padding: 0.7rem 0.9rem;
+		margin: 0.9rem 0 0;
+		max-width: 720px;
 	}
 
 	.deck-card-name {
@@ -681,6 +743,13 @@
 		color: #7fd08a;
 	}
 
+	.basics-note {
+		margin: 0.6rem 0 0;
+		font-size: 0.82rem;
+		font-style: italic;
+		color: rgba(232, 233, 237, 0.45);
+	}
+
 	/* ── Key cards ── */
 	.keycards {
 		display: grid;
@@ -881,6 +950,11 @@
 
 	.row-owned .none {
 		color: rgba(232, 233, 237, 0.3);
+	}
+
+	.row-owned .basic {
+		color: rgba(232, 233, 237, 0.4);
+		font-style: italic;
 	}
 
 	.row-price {

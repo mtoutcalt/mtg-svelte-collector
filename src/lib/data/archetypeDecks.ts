@@ -27,6 +27,10 @@ export interface ArchetypeDeck {
 	gamePlan: string[];
 	keyCards: KeyCard[];
 	decklist: string;
+	// Set on decks assembled from cards the user already owns, so the UI can
+	// flag them and explain the collection connection.
+	fromCollection?: boolean;
+	collectionNote?: string;
 }
 
 export const archetypeDecks: ArchetypeDeck[] = [
@@ -279,5 +283,113 @@ export const archetypeDecks: ArchetypeDeck[] = [
 2 Sulfur Falls
 5 Island
 5 Mountain`
+	},
+	{
+		id: 'dimir-tempo',
+		name: 'Dimir Tempo',
+		archetype: 'Tempo',
+		archetypeColor: '#00acc1',
+		colors: 'Dimir (UB)',
+		tier: 'classic',
+		format: 'Modern',
+		oneLiner: 'Land one efficient threat, then protect it with cheap disruption while it races the opponent down.',
+		whyItWorks:
+			'Tempo sits between aggro and control: you deploy a cheap threat early, then spend the rest of the game protecting it and disrupting the opponent so it gets there. Cheap interaction trades up on mana, delve threats give you a huge body for almost nothing, and every cantrip digs toward the piece you need. You win by being both faster and more disruptive.',
+		gamePlan: [
+			'Turns 1-2: Deploy a cheap threat like Delver and strip their best answer with discard.',
+			'Turns 2-4: Protect your clock with cheap counters and removal while chipping in damage.',
+			'Late game: Delve out a giant Gurmag Angler to close before they can stabilize.'
+		],
+		keyCards: [
+			{
+				name: 'Delver of Secrets',
+				note: 'A one-mana investment that flips into a 3/2 flyer — the cheap, fast clock the whole deck protects.'
+			},
+			{
+				name: 'Gurmag Angler',
+				note: 'Delve exiles cards from your graveyard to cast this 5/5 for as little as one mana — a huge threat that costs almost no tempo.'
+			},
+			{
+				name: 'Drown in the Loch',
+				note: 'Counter a spell OR kill a creature, scaling with their graveyard — the flexible interaction tempo lives on.'
+			},
+			{
+				name: 'Thought Scour',
+				note: 'Draws a card and fills your graveyard to power out Gurmag Angler — cheap fuel that keeps the gas flowing.'
+			}
+		],
+		decklist: `4 Delver of Secrets
+4 Gurmag Angler
+3 Baleful Strix
+2 Tasigur, the Golden Fang
+4 Fatal Push
+3 Drown in the Loch
+2 Counterspell
+2 Dispel
+4 Thoughtseize
+2 Inquisition of Kozilek
+4 Thought Scour
+4 Opt
+3 Serum Visions
+4 Polluted Delta
+4 Watery Grave
+2 Darkslick Shores
+5 Island
+4 Swamp`
+	},
+	{
+		id: 'mono-white-angels',
+		name: 'Mono-White Angels',
+		archetype: 'Tribal',
+		archetypeColor: '#e8b64c',
+		colors: 'Mono-White',
+		tier: 'budget',
+		format: 'Casual',
+		fromCollection: true,
+		collectionNote:
+			'Built around the Angels you already own — you have playsets of Giada, Inspiring Overseer, Youthful Valkyrie and Starfield Shepherd, so you\'re most of the way to a real deck already.',
+		oneLiner: 'Curve out with evasive Angels, pump the team with Angel lords, and fly over the top for the win.',
+		whyItWorks:
+			'This is a tribal aggro-midrange deck built around Angels from your collection. Cheap angels apply early pressure, payoffs like Giada and Lyra make every angel bigger, and flying plus lifelink lets you race almost anything. Because so many cards share the Angel theme, your good draws snowball fast — one lord can turn a board of small flyers into a lethal army.',
+		gamePlan: [
+			'Turns 1-2: Land Giada, Font of Hope to start building your board and ramping your mana.',
+			'Turns 3-4: Deploy value angels like Inspiring Overseer and grow the team with Youthful Valkyrie.',
+			'Turns 5+: Drop Lyra Dawnbringer to anthem the team and close the game in the air.'
+		],
+		keyCards: [
+			{
+				name: 'Giada, Font of Hope',
+				note: 'A one-drop that ramps you AND makes every angel that follows bigger — the engine of the deck.'
+			},
+			{
+				name: 'Inspiring Overseer',
+				note: 'A flying body that draws a card and gains life when it lands — pure value that keeps your hand full.'
+			},
+			{
+				name: 'Youthful Valkyrie',
+				note: 'Grows permanently every time another Angel enters — your reward for going all-in on the tribe.'
+			},
+			{
+				name: 'Lyra Dawnbringer',
+				note: 'An Angel lord: anthems your whole team and hands them lifelink, flipping any race in your favor.'
+			}
+		],
+		decklist: `4 Giada, Font of Hope
+4 Youthful Valkyrie
+4 Inspiring Overseer
+4 Starfield Shepherd
+4 Exemplar of Light
+2 Lyra Dawnbringer
+2 Lightstall Inquisitor
+1 Shalai, Voice of Plenty
+1 Angel of the Ruins
+1 Thraben Watcher
+3 Banishing Light
+2 Sheltered by Ghosts
+2 Felidar Retreat
+1 Swords to Plowshares
+1 Dispatch
+4 Secluded Courtyard
+20 Plains`
 	}
 ];
