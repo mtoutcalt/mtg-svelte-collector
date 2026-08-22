@@ -10,7 +10,12 @@
       "WebFetch(domain:api.scryfall.com)",
       "Bash(python \"C:/Users/mtout/AppData/Local/Temp/claude/c--Users-mtout-OneDrive-Documents-Code-mtg-svelte-collector/12318a9b-b692-489d-ad5a-3c8ef5d710de/scratchpad/inspect_collection.py\")",
       "PowerShell(npm run check 2>&1)",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "PowerShell(node -v)",
+      "PowerShell(npm -v)",
+      "PowerShell(npm config get prefix)",
+      "PowerShell(\"--- CLAUDE.md present? ---\")",
+      "PowerShell(\"--- .mcp.json present? ---\")"
     ],
     "deny": [],
     "ask": []
