@@ -38,6 +38,7 @@
 	let cardData: CardData = null;
 	let searchResults: ScryfallCard[] = [];
 	let showMultipleResults: boolean = false;
+	let correctedFrom: string = '';
 	let loading: boolean = false;
 	let addedToCollection: boolean = false;
 	let addMessage: string = '';
@@ -75,25 +76,28 @@
 		cardData = null;
 		searchResults = [];
 		showMultipleResults = false;
+		correctedFrom = '';
 		loading = true;
 		
+		const query = cardName.trim();
+
 		try {
-			// First try exact search
-			const exactResponse = await fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}`);
+			// 1. Exact name match
+			const exactResponse = await fetch(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(query)}`);
 			if (exactResponse.ok) {
 				cardData = await exactResponse.json() as ScryfallCard;
 				loading = false;
 				return;
 			}
-			
-			// If exact search fails, try fuzzy search for multiple results
-			const fuzzyResponse = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(cardName)}&order=name`);
-			if (fuzzyResponse.ok) {
-				const fuzzyData = await fuzzyResponse.json() as ScryfallSearchResponse;
-				if (fuzzyData.data && fuzzyData.data.length > 0) {
+
+			// 2. Word search — handles partial names like "bolt" and returns several options
+			const searchResponse = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&order=name`);
+			if (searchResponse.ok) {
+				const searchData = await searchResponse.json() as ScryfallSearchResponse;
+				if (searchData.data && searchData.data.length > 0) {
 					// Get up to 8 results
-					const results = fuzzyData.data.slice(0, 8).map(card => ({ ...card, fuzzyMatch: true }));
-					
+					const results = searchData.data.slice(0, 8).map(card => ({ ...card, fuzzyMatch: true }));
+
 					if (results.length === 1) {
 						// Only one result found, show it as single card
 						cardData = results[0];
@@ -102,17 +106,35 @@
 						searchResults = results;
 						showMultipleResults = true;
 					}
-				} else {
-					cardData = { 
-						error: `No cards found matching "${cardName}". Try a different search term.`,
-						notFound: true 
-					};
+					loading = false;
+					return;
 				}
-			} else {
-				cardData = { 
-					error: `Server error (${fuzzyResponse.status}). Please try again later.` 
+			} else if (searchResponse.status !== 404) {
+				// 404 just means "no cards matched" — anything else is a real failure
+				cardData = {
+					error: `Server error (${searchResponse.status}). Please try again later.`
 				};
+				loading = false;
+				return;
 			}
+
+			// 3. Typo-tolerant name match — catches "lighming bolt" → "Lightning Bolt"
+			const typoResponse = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(query)}`);
+			if (typoResponse.ok) {
+				cardData = await typoResponse.json() as ScryfallCard;
+				// We only get here when the typed name wasn't an exact hit, so tell the user
+				correctedFrom = query;
+				loading = false;
+				return;
+			}
+
+			const typoError = await typoResponse.json().catch(() => null) as { type?: string } | null;
+			cardData = {
+				error: typoError?.type === 'ambiguous'
+					? `"${query}" matches too many cards. Try adding another word.`
+					: `No cards found matching "${query}". Try a different search term.`,
+				notFound: true
+			};
 		} catch (error) {
 			if (error instanceof TypeError && error.message.includes('fetch')) {
 				cardData = { error: 'Network error. Please check your internet connection.' };
@@ -309,6 +331,13 @@
 		on:selectCard={handleSelectCard}
 	/>
 
+	<!-- Typo correction notice -->
+	{#if correctedFrom && isCard(cardData)}
+		<p class="did-you-mean">
+			Showing <strong>{cardData.name}</strong> — no exact match for “{correctedFrom}”
+		</p>
+	{/if}
+
 	<!-- Card Details -->
 	<CardDetails
 		cardData={isCard(cardData) ? cardData : null}
@@ -378,3 +407,21 @@
 	imageName={modalImageName}
 	on:close={handleCloseImageModal}
 />
+<style>
+	.did-you-mean {
+		max-width: 880px;
+		margin: 0 auto 1.25rem;
+		padding: 0.7rem 1rem;
+		text-align: center;
+		font-size: 0.95rem;
+		color: rgba(232, 233, 237, 0.6);
+		background: rgba(201, 176, 55, 0.07);
+		border: 1px solid rgba(201, 176, 55, 0.2);
+		border-radius: 12px;
+	}
+
+	.did-you-mean strong {
+		color: #e8d06a;
+		font-weight: 600;
+	}
+</style>

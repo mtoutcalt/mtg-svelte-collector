@@ -53,7 +53,7 @@
 				<polygon points="16,8 24,16 16,24 8,16" fill="currentColor" opacity="0.5"/>
 				<circle cx="16" cy="16" r="2.5" fill="currentColor"/>
 			</svg>
-			<span class="brand-name">Arcane Vault</span>
+			<span class="brand-name">Mark's Magic Collection</span>
 		</button>
 
 		<!-- Nav -->
@@ -165,7 +165,7 @@
 
 	.brand-name {
 		font-family: 'Cinzel', serif;
-		font-size: 1.25rem;
+		font-size: 1.05rem;
 		font-weight: 700;
 		background: linear-gradient(135deg, #c9b037 0%, #f4e58c 50%, #c9b037 100%);
 		background-size: 200% 200%;
@@ -173,7 +173,7 @@
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		animation: brand-shimmer 5s ease-in-out infinite;
-		letter-spacing: 1.5px;
+		letter-spacing: 0.6px;
 		white-space: nowrap;
 	}
 
@@ -273,6 +273,13 @@
 		.nav-item {
 			padding: 0.45rem 0.65rem;
 			font-size: 0.78rem;
+		}
+	}
+	/* Longer brand name: tighten before the nav has to fight it for room */
+	@media (max-width: 1000px) {
+		.brand-name {
+			font-size: 0.92rem;
+			letter-spacing: 0.2px;
 		}
 	}
 </style>
