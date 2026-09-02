@@ -300,7 +300,21 @@
 		const { cardId, removeAll } = event.detail;
 		await removeFromCollection(cardId, removeAll);
 	}
+
+	$: pageTitle = viewingCollection
+		? "Collection · Mark's Magic Collection"
+		: viewingAnalytics
+		? "Analytics · Mark's Magic Collection"
+		: viewingDecks
+		? "Decks · Mark's Magic Collection"
+		: viewingLearn
+		? "Learn · Mark's Magic Collection"
+		: "Mark's Magic Collection";
 </script>
+
+<svelte:head>
+	<title>{pageTitle}</title>
+</svelte:head>
 
 <!-- Navigation -->
 <Navigation

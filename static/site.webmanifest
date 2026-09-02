@@ -1,0 +1,17 @@
+{
+	"name": "Mark's Magic Collection",
+	"short_name": "Magic Collection",
+	"description": "A personal Magic: The Gathering collection — search cards, track value, build decks, and learn the archetypes.",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#080c18",
+	"theme_color": "#080c18",
+	"icons": [
+		{
+			"src": "/favicon.svg",
+			"type": "image/svg+xml",
+			"sizes": "any",
+			"purpose": "any"
+		}
+	]
+}

@@ -48,10 +48,25 @@
 	<div class="header-inner">
 		<!-- Brand -->
 		<button class="brand-btn" on:click={handleGoHome} aria-label="Go to Search">
-			<svg class="brand-glyph" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-				<polygon points="16,2 30,16 16,30 2,16" stroke="currentColor" stroke-width="1.5" fill="none"/>
-				<polygon points="16,8 24,16 16,24 8,16" fill="currentColor" opacity="0.5"/>
-				<circle cx="16" cy="16" r="2.5" fill="currentColor"/>
+			<svg class="brand-glyph" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+				<defs>
+					<linearGradient id="brand-gold" x1="0" y1="0" x2="1" y2="1">
+						<stop offset="0%" stop-color="#8b7328" />
+						<stop offset="45%" stop-color="#f4e58c" />
+						<stop offset="100%" stop-color="#c9b037" />
+					</linearGradient>
+				</defs>
+				<!-- Colour pie: W U B R G, clockwise from top -->
+				<g stroke="#060912" stroke-width="1.1" stroke-linejoin="round">
+					<path d="M32 32 L32 10 A22 22 0 0 1 52.923 25.202 Z" fill="#fffbd5" />
+					<path d="M32 32 L52.923 25.202 A22 22 0 0 1 44.931 49.798 Z" fill="#aae0fa" />
+					<path d="M32 32 L44.931 49.798 A22 22 0 0 1 19.069 49.798 Z" fill="#cbc2bf" />
+					<path d="M32 32 L19.069 49.798 A22 22 0 0 1 11.077 25.202 Z" fill="#f9aa8f" />
+					<path d="M32 32 L11.077 25.202 A22 22 0 0 1 32 10 Z" fill="#9bd3ae" />
+				</g>
+				<circle cx="32" cy="32" r="22" fill="none" stroke="url(#brand-gold)" stroke-width="3" />
+				<circle cx="32" cy="32" r="9" fill="#080c18" />
+				<polygon points="32,24 40,32 32,40 24,32" fill="url(#brand-gold)" />
 			</svg>
 			<span class="brand-name">Mark's Magic Collection</span>
 		</button>
